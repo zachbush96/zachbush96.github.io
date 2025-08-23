@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tree Lead Exchange — Overflow Leads, Sold Fast</title>
+  <meta name="description" content="A private beta marketplace where tree service companies sell overflow leads and buy jobs in their service area.">
+  <!-- Tailwind v2 CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    :root { color-scheme: dark; }
+    .gradient{background:
+      radial-gradient(900px 480px at 10% -10%, #86efac33, transparent 60%),
+      radial-gradient(800px 520px at 110% 10%, #22d3ee33, transparent 60%),
+      linear-gradient(180deg,#0b1220 0%,#0b1220 60%,#0b1220 100%)}
+    .glass{background:rgba(255,255,255,.06);backdrop-filter:blur(10px)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:0.9rem;font-weight:600}
+    .btn-emerald{background:#34d399;color:#0b1220} .btn-emerald:hover{background:#10b981}
+    .btn-cyan{background:#22d3ee;color:#0b1220} .btn-cyan:hover{background:#06b6d4}
+    .ring-focus:focus{outline:none;box-shadow:0 0 0 3px rgba(16,185,129,.6)}
+    .badge{font-size:.70rem;padding:.25rem .5rem;border-radius:.45rem;background:rgba(255,255,255,.1)}
+    .sr{position:absolute;left:-9999px}
+    /* modal */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:1rem;background:rgba(0,0,0,.55);z-index:50}
+    .modal[aria-hidden="false"]{display:flex}
+    .input{width:100%;padding:.70rem .85rem;border-radius:.75rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+    .input:focus{outline:none;border-color:#34d399;box-shadow:0 0 0 3px rgba(52,211,153,.25)}
+    .chip{padding:.35rem .6rem;border-radius:.7rem;background:rgba(255,255,255,.08);font-size:.75rem}
+    .sticky-cta{position:sticky;bottom:0;z-index:40}
+  </style>
+</head>
+<body class="gradient text-gray-100 antialiased">
+  <!-- Top Announcement -->
+  <div class="glass border-b border-white/10">
+    <div class="max-w-6xl mx-auto px-4 py-2 text-center text-sm text-gray-200">
+      Private beta in select cities • <span class="text-emerald-300 font-medium">1% fee only when a lead sells</span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 glass border-b border-white/10">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-emerald-400 rounded-xl flex items-center justify-center font-black text-slate-900">TL</div>
+        <span class="font-semibold tracking-wide">Tree Lead Exchange</span>
+      </div>
+      <nav class="hidden md:flex gap-6 text-gray-300">
+        <a href="#how" class="hover:text-white">How it works</a>
+        <a href="#market" class="hover:text-white">Live examples</a>
+        <a href="#faq" class="hover:text-white">FAQ</a>
+      </nav>
+      <div class="hidden md:flex gap-2">
+        <button id="openBuyer" class="btn btn-cyan px-4 py-2 ring-focus">Get Lead Alerts</button>
+        <button id="openSeller" class="btn btn-emerald px-4 py-2 ring-focus">Post Overflow Lead</button>
+      </div>
+      <button id="openMenu" class="md:hidden btn px-3 py-2 bg-white/10 border border-white/10 rounded-xl">Menu</button>
+    </div>
+    <!-- mobile menu -->
+    <div id="mobileMenu" class="hidden md:hidden px-4 pb-4 space-y-2">
+      <a href="#how" class="block px-3 py-2 rounded-lg bg-white/5">How it works</a>
+      <a href="#market" class="block px-3 py-2 rounded-lg bg-white/5">Live examples</a>
+      <a href="#faq" class="block px-3 py-2 rounded-lg bg-white/5">FAQ</a>
+      <div class="flex gap-2 pt-2">
+        <button id="openBuyer_m" class="btn btn-cyan px-4 py-2 flex-1">Get Alerts</button>
+        <button id="openSeller_m" class="btn btn-emerald px-4 py-2 flex-1">Post Lead</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="max-w-6xl mx-auto px-4 pt-10 pb-14">
+    <div class="grid md:grid-cols-2 gap-10 items-center">
+      <div>
+        <h1 class="text-4xl md:text-5xl font-extrabold leading-tight">
+          Sell overflow leads. <span class="text-emerald-400">Buy ready jobs.</span>
+        </h1>
+        <p class="mt-4 text-gray-300 text-lg">
+          Verified tree service pros trade real jobs by zip and category. Post what you can’t take.
+          Get instant SMS/email alerts when work appears in your radius.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button id="openSeller_h" class="btn btn-emerald px-5 py-3">Post an Overflow Lead</button>
+          <button id="openBuyer_h" class="btn btn-cyan px-5 py-3">Get Lead Alerts</button>
+        </div>
+        <ul class="mt-5 text-sm text-gray-300 space-y-2">
+          <li class="flex items-start gap-2"><span class="text-emerald-400">✓</span> No subscriptions—pay only on successful sale (1%).</li>
+          <li class="flex items-start gap-2"><span class="text-emerald-400">✓</span> Replacement/refund if contact is unreachable within 48 hours.</li>
+          <li class="flex items-start gap-2"><span class="text-emerald-400">✓</span> You control pricing & exclusivity.</li>
+        </ul>
+        <div class="mt-6 flex gap-2">
+          <span class="chip">Removal</span>
+          <span class="chip">Trimming</span>
+          <span class="chip">Stump</span>
+          <span class="chip">Crane</span>
+          <span class="chip">Emergency</span>
+        </div>
+      </div>
+
+      <!-- Sample Lead Card -->
+      <div class="glass border border-white/10 rounded-2xl p-6">
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-gray-300">Sample Lead</span>
+          <span class="badge">Pittsburgh, PA</span>
+        </div>
+        <h3 class="mt-2 text-xl font-semibold">Large Oak Removal — Backyard, likely crane</h3>
+        <ul class="mt-3 text-sm text-gray-300 space-y-2">
+          <li>• Contact: <span class="text-gray-400">(hidden until purchase)</span></li>
+          <li>• Zip: 15237 · Age: 2 hours · Exclusive</li>
+          <li>• Asking: <span class="font-semibold text-white">$85</span></li>
+        </ul>
+        <div class="mt-4 grid grid-cols-3 gap-3 text-center text-xs">
+          <div class="bg-white/5 rounded-lg p-3">Freshness<br><span class="text-emerald-400 font-semibold">Fresh</span></div>
+          <div class="bg-white/5 rounded-lg p-3">Category<br><span class="font-semibold">Removal</span></div>
+          <div class="bg-white/5 rounded-lg p-3">Est. Job Value<br><span class="font-semibold">$2,000–$3,500</span></div>
+        </div>
+        <div class="mt-5 flex gap-3">
+          <button id="openBuyer_card" class="btn btn-cyan px-4 py-2 flex-1">Get Alerts Like This</button>
+          <button id="openSeller_card" class="btn px-4 py-2 bg-white/10 border border-white/10 rounded-xl flex-1">Post Yours</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Simple steps -->
+  <section id="how" class="max-w-6xl mx-auto px-4 py-12 border-t border-white/10">
+    <h2 class="text-3xl font-bold">How it works</h2>
+    <div class="mt-6 grid md:grid-cols-3 gap-6">
+      <div class="glass border border-white/10 rounded-2xl p-6">
+        <div class="text-emerald-400 font-semibold">1) Post overflow</div>
+        <p class="text-gray-300 mt-2">Pick category, zip, notes, and your asking price. Contact stays hidden until sold.</p>
+      </div>
+      <div class="glass border border-white/10 rounded-2xl p-6">
+        <div class="text-cyan-400 font-semibold">2) Auto-match</div>
+        <p class="text-gray-300 mt-2">Buyers get SMS/email alerts by radius & category. First-come for exclusive leads.</p>
+      </div>
+      <div class="glass border border-white/10 rounded-2xl p-6">
+        <div class="text-violet-400 font-semibold">3) Paid & released</div>
+        <p class="text-gray-300 mt-2">Once purchased, contact details unlock. You get paid—only 1% platform fee.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Market preview -->
+  <section id="market" class="max-w-6xl mx-auto px-4 py-12 border-t border-white/10">
+    <div class="flex items-end justify-between">
+      <h2 class="text-3xl font-bold">Live-style examples</h2>
+      <button id="openBuyer_market" class="btn btn-cyan px-4 py-2">Get Alerts</button>
+    </div>
+    <div class="mt-6 grid md:grid-cols-3 gap-6">
+      <!-- Example cards -->
+      <article class="glass border border-white/10 rounded-2xl p-5">
+        <div class="flex items-center justify-between text-sm">
+          <span class="badge">15236</span><span class="text-gray-300">Age: 35m</span>
+        </div>
+        <h3 class="mt-2 font-semibold">Emergency limb on roof</h3>
+        <p class="text-sm text-gray-300 mt-1">Homeowner reports cracked limb over bedroom.</p>
+        <div class="mt-3 flex items-center justify-between text-sm">
+          <span>Ask: <b>$65</b></span><span class="chip">Emergency</span>
+        </div>
+      </article>
+
+      <article class="glass border border-white/10 rounded-2xl p-5">
+        <div class="flex items-center justify-between text-sm">
+          <span class="badge">15108</span><span class="text-gray-300">Age: 2h</span>
+        </div>
+        <h3 class="mt-2 font-semibold">3 stumps, grind + haul</h3>
+        <p class="text-sm text-gray-300 mt-1">Front yard access, 20–24” diameter.</p>
+        <div class="mt-3 flex items-center justify-between text-sm">
+          <span>Ask: <b>$40</b></span><span class="chip">Stump</span>
+        </div>
+      </article>
+
+      <article class="glass border border-white/10 rounded-2xl p-5">
+        <div class="flex items-center justify-between text-sm">
+          <span class="badge">15210</span><span class="text-gray-300">Age: 5h</span>
+        </div>
+        <h3 class="mt-2 font-semibold">Trim 2 maples, powerline aware</h3>
+        <p class="text-sm text-gray-300 mt-1">Customer flexible on schedule.</p>
+        <div class="mt-3 flex items-center justify-between text-sm">
+          <span>Ask: <b>$30</b></span><span class="chip">Trimming</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="max-w-6xl mx-auto px-4 py-12 border-t border-white/10">
+    <h2 class="text-3xl font-bold">FAQ</h2>
+    <div class="mt-6 space-y-4">
+      <details class="glass border border-white/10 rounded-xl p-4">
+        <summary class="cursor-pointer font-semibold">What counts as “overflow”?</summary>
+        <p class="mt-2 text-gray-300">Anything you can’t service promptly: out-of-area, overbooked, equipment constraints, specialty work.</p>
+      </details>
+      <details class="glass border border-white/10 rounded-xl p-4">
+        <summary class="cursor-pointer font-semibold">How do you verify companies?</summary>
+        <p class="mt-2 text-gray-300">Beta uses manual verification—website, business details, and (when provided) license/insurance.</p>
+      </details>
+      <details class="glass border border-white/10 rounded-xl p-4">
+        <summary class="cursor-pointer font-semibold">Refunds/replacements?</summary>
+        <p class="mt-2 text-gray-300">If contact is unreachable/invalid within 48h, we replace or refund. Report issues from your receipt.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- Sticky CTA -->
+  <div class="sticky-cta glass border-t border-white/10">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+      <p class="text-sm text-gray-200">Ready to try the beta? It’s free to join—pay only when a lead sells.</p>
+      <div class="flex gap-2">
+        <button id="openBuyer_b" class="btn btn-cyan px-4 py-2">Get Lead Alerts</button>
+        <button id="openSeller_b" class="btn btn-emerald px-4 py-2">Post Overflow Lead</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="max-w-6xl mx-auto px-4 py-10 text-sm text-gray-400 border-t border-white/10">
+    <div>© <span id="year"></span> Tree Lead Exchange — Beta</div>
+    <div class="mt-2">Admin fee: 1% per successful sale. Contact: <a class="underline" href="mailto:admin@example.com">admin@example.com</a></div>
+  </footer>
+
+  <!-- Buyer (Alerts) Modal -->
+  <div id="buyerModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="buyerTitle">
+    <div class="glass border border-white/10 rounded-2xl w-full max-w-xl p-6 relative">
+      <button data-close class="absolute right-3 top-3 px-2 py-1 rounded-md bg-white/10">✕</button>
+      <h3 id="buyerTitle" class="text-2xl font-bold">Get Lead Alerts</h3>
+      <p class="mt-1 text-gray-300 text-sm">We’ll email/text you when new leads hit your radius & categories.</p>
+      <form id="buyerForm" class="mt-5 space-y-4" action="https://example.com/buyer-intake-form" method="POST">
+        <div class="grid md:grid-cols-2 gap-3">
+          <label class="block text-sm">Business name
+            <input class="input mt-1" name="company" autocomplete="organization" required />
+          </label>
+          <label class="block text-sm">Contact email
+            <input class="input mt-1" type="email" name="email" autocomplete="email" required />
+          </label>
+        </div>
+        <div class="grid md:grid-cols-2 gap-3">
+          <label class="block text-sm">Phone (for SMS)
+            <input class="input mt-1" type="tel" name="phone" placeholder="(555) 555-5555" />
+          </label>
+          <label class="block text-sm">Service radius (miles)
+            <input class="input mt-1" type="number" min="1" max="100" name="radius" value="15" required />
+          </label>
+        </div>
+        <div class="grid md:grid-cols-2 gap-3">
+          <label class="block text-sm">Primary zip
+            <input class="input mt-1" name="zip" pattern="\\d{5}" placeholder="15237" required />
+          </label>
+          <label class="block text-sm">Additional zips (comma)
+            <input class="input mt-1" name="extra_zips" placeholder="15210, 15108" />
+          </label>
+        </div>
+        <fieldset class="mt-1">
+          <legend class="text-sm font-medium mb-2">Categories</legend>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center gap-2"><input type="checkbox" name="cat[]" value="Removal" checked> Removal</label>
+            <label class="flex items-center gap-2"><input type="checkbox" name="cat[]" value="Trimming" checked> Trimming</label>
+            <label class="flex items-center gap-2"><input type="checkbox" name="cat[]" value="Stump"> Stump</label>
+            <label class="flex items-center gap-2"><input type="checkbox" name="cat[]" value="Crane"> Crane</label>
+            <label class="flex items-center gap-2"><input type="checkbox" name="cat[]" value="Emergency"> Emergency</label>
+          </div>
+        </fieldset>
+        <div class="grid md:grid-cols-2 gap-3">
+          <label class="block text-sm">Max price per lead ($)
+            <input class="input mt-1" type="number" min="5" max="250" step="5" name="max_price" value="100" />
+          </label>
+          <label class="block text-sm">Preferred delivery
+            <select class="input mt-1" name="delivery">
+              <option>Email only</option>
+              <option>SMS + Email</option>
+              <option>SMS only</option>
+            </select>
+          </label>
+        </div>
+        <label class="flex items-center gap-2 text-sm mt-1">
+          <input type="checkbox" name="verified" value="yes"> I confirm we are an active tree service company.
+        </label>
+        <div class="pt-3 flex gap-3">
+          <button class="btn btn-cyan px-5 py-2.5" type="submit">Start Alerts</button>
+          <button class="btn px-5 py-2.5 bg-white/10 border border-white/10" data-close type="button">Cancel</button>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">By continuing, you agree to no spamming, honoring do-not-call, and reporting dead leads.</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Seller (Post Lead) Modal -->
+  <div id="sellerModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="sellerTitle">
+    <div class="glass border border-white/10 rounded-2xl w-full max-w-xl p-6 relative">
+      <button data-close class="absolute right-3 top-3 px-2 py-1 rounded-md bg-white/10">✕</button>
+      <h3 id="sellerTitle" class="text-2xl font-bold">Post Overflow Lead</h3>
+      <p class="mt-1 text-gray-300 text-sm">2–3 minutes. Contact is hidden until purchased. You set the price.</p>
+      <form id="sellerForm" class="mt-5 space-y-4" action="https://example.com/post-lead-form" method="POST">
+        <div class="grid md:grid-cols-2 gap-3">
+          <label class="block text-sm">Your business
+            <input class="input mt-1" name="company" autocomplete="organization" required />
+          </label>
+          <label class="block text-sm">Contact email
+            <input class="input mt-1" type="email" name="email" autocomplete="email" required />
+          </label>
+        </div>
+        <div class="grid md:grid-cols-2 gap-3">
+          <label class="block text-sm">Customer city
+            <input class="input mt-1" name="city" placeholder="Pittsburgh" required />
+          </label>
+          <label class="block text-sm">Zip
+            <input class="input mt-1" name="zip" pattern="\\d{5}" placeholder="15237" required />
+          </label>
+        </div>
+        <div class="grid md:grid-cols-2 gap-3">
+          <label class="block text-sm">Category
+            <select class="input mt-1" name="category" required>
+              <option>Removal</option><option>Trimming</option><option>Stump</option><option>Crane</option><option>Emergency</option>
+            </select>
+          </label>
+          <label class="block text-sm">Asking price ($)
+            <input class="input mt-1" type="number" min="10" max="250" step="5" name="ask" value="85" required />
+          </label>
+        </div>
+        <label class="block text-sm">Job notes
+          <textarea class="input mt-1" name="notes" rows="3" placeholder="Size, access, hazards, timeline…" required></textarea>
+        </label>
+        <label class="block text-sm">Customer contact (kept private)
+          <input class="input mt-1" name="customer_contact" placeholder="Name & phone/email" required />
+        </label>
+        <div class="grid md:grid-cols-2 gap-3">
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="exclusive" value="yes" checked> Exclusive sale</label>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="optin_replace" value="yes" checked> 48h unreachable → replace/refund</label>
+        </div>
+        <div class="pt-3 flex gap-3">
+          <button class="btn btn-emerald px-5 py-2.5" type="submit">Post Lead</button>
+          <button class="btn px-5 py-2.5 bg-white/10 border border-white/10" data-close type="button">Cancel</button>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">We charge a 1% platform fee on sale. You can edit or withdraw unsold leads anytime.</p>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ----- Config: swap these with your live form URLs if needed -----
+    const POST_LEAD_URL = 'https://forms.gle/4J4BSjho18Bz8tNu5';
+    const BUY_LEAD_URL  = 'https://forms.gle/6tYyb2hmUtg3bY257';
+
+    // ----- Wire up dynamic year -----
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // ----- Mobile menu toggle -----
+    const openMenu = document.getElementById('openMenu');
+    const mobileMenu = document.getElementById('mobileMenu');
+    if (openMenu) openMenu.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+
+    // ----- Modal helpers -----
+    const buyerModal = document.getElementById('buyerModal');
+    const sellerModal = document.getElementById('sellerModal');
+    const openersBuyer = ['openBuyer','openBuyer_h','openBuyer_b','openBuyer_m','openBuyer_market','openBuyer_card'].map(id=>document.getElementById(id)).filter(Boolean);
+    const openersSeller = ['openSeller','openSeller_h','openSeller_b','openSeller_m','openSeller_card'].map(id=>document.getElementById(id)).filter(Boolean);
+
+    function openModal(el){ el.setAttribute('aria-hidden','false'); }
+    function closeModal(el){ el.setAttribute('aria-hidden','true'); }
+
+    openersBuyer.forEach(btn=>btn.addEventListener('click',()=>openModal(buyerModal)));
+    openersSeller.forEach(btn=>btn.addEventListener('click',()=>openModal(sellerModal)));
+
+    document.querySelectorAll('[data-close]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        const m = e.target.closest('.modal');
+        if (m) closeModal(m);
+      });
+    });
+    [buyerModal, sellerModal].forEach(m=>{
+      m.addEventListener('click', (e)=>{ if(e.target===m) closeModal(m); });
+    });
+
+    // ----- Persist basic business info to help autofill -----
+    const KEY = 'tle_profile';
+    function saveProfile(form){
+      const data = Object.fromEntries(new FormData(form));
+      const profile = { company: data.company||'', email: data.email||'', phone: data.phone||'' };
+      localStorage.setItem(KEY, JSON.stringify(profile));
+    }
+    function loadProfileInto(form){
+      try{
+        const p = JSON.parse(localStorage.getItem(KEY)||'{}');
+        if (p.company && form.company) form.company.value = form.company.value || p.company;
+        if (p.email && form.email) form.email.value = form.email.value || p.email;
+        if (p.phone && form.phone) form.phone.value = form.phone.value || p.phone;
+      }catch{}
+    }
+
+    const buyerForm = document.getElementById('buyerForm');
+    const sellerForm = document.getElementById('sellerForm');
+    [buyerForm, sellerForm].forEach(f=>{ if (f) loadProfileInto(f); });
+
+    // Set form action URLs
+    if (buyerForm) buyerForm.action = BUY_LEAD_URL;
+    if (sellerForm) sellerForm.action = POST_LEAD_URL;
+
+    // Save profile on submit
+    if (buyerForm) buyerForm.addEventListener('submit', ()=>saveProfile(buyerForm));
+    if (sellerForm) sellerForm.addEventListener('submit', ()=>saveProfile(sellerForm));
+
+    // Keyboard escape to close
+    window.addEventListener('keydown', (e)=>{
+      if (e.key === 'Escape'){
+        closeModal(buyerModal); closeModal(sellerModal);
+      }
+    });
+  </script>
+</body>
+</html>
