@@ -360,14 +360,15 @@
       </p>
     </div>
   </div>
-
+  
+  <iframe name="n8n_sink" id="n8n_sink" style="display:none;"></iframe>
 
   <script>
     // ----- Config: point forms to n8n -----
     const BUY_LEAD_URL  = 'https://n8n.zach.games/webhook-test/New-Buyer';
     const POST_LEAD_URL = 'https://n8n.zach.games/webhook-test/New-Seller';
     //const BUY_LEAD_URL  = 'https://n8n.zach.games/webhook/New-Buyer';
-    //const POST_LEAD_URL = 'https://n8n.zach.games/webhoot/New-Seller';
+    //const POST_LEAD_URL = 'https://n8n.zach.games/webhook/New-Seller';
 
     // ----- Wire up dynamic year -----
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -488,7 +489,7 @@
   </script>
 
   
-  <iframe name="n8n_sink" id="n8n_sink" style="display:none;"></iframe>
+  
 
 </body>
 </html>
