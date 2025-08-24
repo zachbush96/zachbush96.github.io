@@ -33,7 +33,7 @@
   <!-- Top Announcement -->
   <div class="glass border-b border-white/10">
     <div class="max-w-6xl mx-auto px-4 py-2 text-center text-sm text-gray-200">
-      Private beta in select cities • <span class="text-emerald-300 font-medium">1% fee only when a lead sells</span>
+      Private beta in select cities TEST • <span class="text-emerald-300 font-medium">1% fee only when a lead sells</span>
     </div>
   </div>
 
@@ -350,10 +350,24 @@
     </div>
   </div>
 
+
+  <!-- Thank You Modal -->
+  <div id="thanksModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="thanksTitle">
+    <div class="glass border border-white/10 rounded-2xl w-full max-w-sm p-6 text-center relative">
+      <h3 id="thanksTitle" class="text-2xl font-bold">Thanks — you’re in!</h3>
+      <p class="mt-2 text-gray-300 text-sm">
+        We received your info. We’ll reach out shortly with next steps.
+      </p>
+    </div>
+  </div>
+
+
   <script>
     // ----- Config: point forms to n8n -----
     const BUY_LEAD_URL  = 'https://n8n.zach.games/webhook-test/New-Buyer';
     const POST_LEAD_URL = 'https://n8n.zach.games/webhook-test/New-Seller';
+    //const BUY_LEAD_URL  = 'https://n8n.zach.games/webhook/New-Buyer';
+    //const POST_LEAD_URL = 'https://n8n.zach.games/webhoot/New-Seller';
 
     // ----- Wire up dynamic year -----
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -375,6 +389,15 @@
 
     function openModal(el){ if (el) el.setAttribute('aria-hidden','false'); }
     function closeModal(el){ if (el) el.setAttribute('aria-hidden','true'); }
+    
+    // ----- Thank You Modal -----
+    const thanksModal = document.getElementById('thanksModal');
+
+    function showThanks(){
+      openModal(thanksModal);
+      setTimeout(()=> closeModal(thanksModal), 2000);
+    }
+
 
     // ✅ Re-enable the click handlers that open the modals
     openersBuyer.forEach(btn=>btn.addEventListener('click',()=>{
@@ -440,11 +463,20 @@
     const sink = document.getElementById('n8n_sink');
     if (sink) sink.addEventListener('load', () => {
       if (!lastSubmitted) return;
+
+      // Close the form modal that was just submitted
+      if (lastSubmitted.modal) closeModal(lastSubmitted.modal);
+
+      // Optionally show the per-form success banner (keep or delete these 2 lines)
       const successEl = document.getElementById(lastSubmitted.successId);
       if (successEl) successEl.classList.remove('hidden');
-      if (lastSubmitted.modal) setTimeout(()=> closeModal(lastSubmitted.modal), 2000);
+
+      // Fire the 2-second Thank You modal
+      showThanks();
+
       lastSubmitted = null;
     });
+
 
     // ----- Keyboard escape to close -----
     window.addEventListener('keydown', (e)=>{
