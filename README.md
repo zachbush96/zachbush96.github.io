@@ -84,10 +84,11 @@ const POST_LEAD_URL = 'https://n8n.zach.games/webhook-test/New-Seller';
 // const POST_LEAD_URL = 'https://n8n.zach.games/webhook/New-Seller';
 
 
-## Profiles: Basic business info (company/email/phone) is cached in localStorage to prefill forms.
+## Profiles: 
+Basic business info (company/email/phone) is cached in localStorage to prefill forms.
 
-Forms & Payloads
-Buyer: “Get Lead Alerts”
+# Forms & Payloads
+**Buyer: “Get Lead Alerts”**
 
 POST https://n8n.zach.games/webhook-test/New-Buyer
 
@@ -107,7 +108,7 @@ Example (x-www-form-urlencoded)
 
 company=Acorn+Tree+LLC&email=ops@acorn.com&phone=4125551212&radius=15&zip=15237&extra_zips=15210%2C%2015108&cat[]=Removal&cat[]=Trimming&max_price=100&delivery=SMS+%2B+Email&verified=yes
 
-Seller: “Post Overflow Lead”
+**Seller: “Post Overflow Lead”**
 
 POST https://n8n.zach.games/webhook-test/New-Seller
 
@@ -161,7 +162,7 @@ Seller (link), Lead (link), Amount to Seller ($) (Sold − 1% fee), Status (Queu
 Full field lists & IDs are in the schema block at the end of this README.
 
 ## n8n Workflows
-1) New-Seller Webhook
+**1) New-Seller Webhook**
 
 Trigger: POST /webhook-test/New-Seller
 Steps (suggested nodes):
@@ -172,8 +173,7 @@ Upsert Seller Business (by email).
 
 Create Lead in Airtable.
 
-Find Matching Buyers (see Matching & Alerts
-).
+Find Matching Buyers (see Matching & Alerts).
 
 Create Interest per matched Buyer (Status=Alerted).
 
@@ -181,7 +181,7 @@ Send Email/SMS alerts (respect Buyer delivery).
 
 Respond 200 (minimal HTML/JSON for iframe).
 
-2) New-Buyer Webhook
+**2) New-Buyer Webhook**
 
 Trigger: POST /webhook-test/New-Buyer
 Steps:
@@ -200,9 +200,9 @@ Mark Lead sold, set Buyer, Sold Price, fee, and create Payout.
 
 Send contact reveal to Buyer.
 
-Matching & Alerts
+## Matching & Alerts
 
-Current (beta) behavior:
+**Current (beta) behavior:**
 
 Match if category overlaps AND ZIP matches (zip equals Lead ZIP or appears in extra_zips).
 
@@ -210,17 +210,11 @@ Enforce Buyer’s max_price (Lead ask ≤ max).
 
 De-duplicate alerts per buyer & lead.
 
-Optional (enhanced radius):
+**Optional (enhanced radius):**
 
 If a ZIP geocoding service (e.g., Zipcodeapi or internal table) is configured in n8n, compute distance(primary ZIP ↔ lead ZIP) and match when distance ≤ radius. Store the library/source used in Businesses.Notes for auditability.
 
-Alert channels:
-
-Email via n8n SMTP node.
-
-SMS via Twilio (or alternative). Respect Buyer delivery preferences.
-
-Payments
+## Payments
 
 Fee: 1% platform fee (recorded in Leads → Admin Fee 1% ($) and Payouts → Admin Fee 1% ($) lookup).
 
@@ -231,41 +225,6 @@ Set Leads.Status=Sold, link Buyer, set Sold Price ($).
 Create Payout record with net amount to seller.
 
 Email/SMS buyer with unlocked contact details.
-
-Deploy
-Frontend (GitHub Pages)
-
-Repo contains index.html from this project.
-
-Push to branch main.
-
-In GitHub → Settings → Pages → Source: Deploy from a branch → main / root.
-
-Live at https://zachbush96.github.io (already set up).
-
-n8n
-
-Host at https://n8n.zach.games.
-
-Create the two Webhook workflows above. Use /webhook-test/... while testing.
-
-When stable, switch frontend constants to /webhook/....
-
-Airtable
-
-Create a base with the 4 tables & fields per schema below.
-
-Generate a PAT (Personal Access Token) with base scope.
-
-Configure n8n Airtable nodes with Base ID and Token.
-
-Local Dev
-
-Open index.html directly in your browser or via any static file server (python -m http.server).
-
-Tailwind is loaded from CDN; no build step needed.
-
-To test end-to-end, keep the -test webhook URLs active in the script.
 
 ## Environment
 
@@ -282,22 +241,6 @@ ZIPCODE_API_KEY	(Optional) ZIP→lat/lng matching
 Security & Privacy
 
 PII Handling: Lead contact is stored in Airtable and only revealed post-purchase.
-
-Transport: Forms post over HTTPS to n8n.
-
-Webhook Verification: Use Stripe/Twilio/Airtable node verification options where available.
-
-Rate limiting / spam: Add n8n checks (honeypot field, submit frequency cap per IP/email).
-
-Opt-out: Respect do-not-call/opt-out; track in Businesses.Notes and suppress alerts.
-
-## FAQ (Product Policies)
-
-What is “overflow”? Work you can’t service promptly (out-of-area, overbooked, equipment constraints, specialty).
-
-Verification: Manual during beta (website, business details, and when provided license/insurance). Track in Businesses.Verified + Verification Links/Photos.
-
-Refunds: If contact is unreachable/invalid within 48 hours, we replace or refund. Use the purchase receipt link to report.
 
 ## Roadmap / TODOs
 
