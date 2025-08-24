@@ -1,0 +1,485 @@
+{
+  "name": "New Buyer",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "New-Buyer",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -544,
+        -192
+      ],
+      "id": "eac86b47-e0aa-49a2-b504-1be7090e3609",
+      "name": "Webhook",
+      "webhookId": "86415318-4ac8-42c2-9221-007562d1c2aa"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appnSwvzl4E5V29W5",
+          "mode": "list",
+          "cachedResultName": "Lead Exchange Manager",
+          "cachedResultUrl": "https://airtable.com/appnSwvzl4E5V29W5"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblvo0GzApyac92pl",
+          "mode": "list",
+          "cachedResultName": "Businesses",
+          "cachedResultUrl": "https://airtable.com/appnSwvzl4E5V29W5/tblvo0GzApyac92pl"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Verified": false,
+            "Role": "Buyer",
+            "Business Name": "={{ $json.body.company }}",
+            "Email": "={{ $json.body.email }}",
+            "Phone": "={{ $json.body.phone }}",
+            "Service Areas": "={{ $json.body.zip }}",
+            "Interest Records": "={{ Array.isArray($json.body['cat[]']) ? $json.body['cat[]'].join(\", \") : $json.body['cat[]'] || \"\" }}\n"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Business Name",
+              "displayName": "Business Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Contact Name",
+              "displayName": "Contact Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Role",
+              "displayName": "Role",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Seller",
+                  "value": "Seller"
+                },
+                {
+                  "name": "Buyer",
+                  "value": "Buyer"
+                },
+                {
+                  "name": "Both",
+                  "value": "Both"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Service Areas",
+              "displayName": "Service Areas",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Verified",
+              "displayName": "Verified",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Verification Photos",
+              "displayName": "Verification Photos",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Verification Links",
+              "displayName": "Verification Links",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Leads (as Seller)",
+              "displayName": "Leads (as Seller)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Leads (as Buyer)",
+              "displayName": "Leads (as Buyer)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Interest Records",
+              "displayName": "Interest Records",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Payouts",
+              "displayName": "Payouts",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Total Leads as Seller",
+              "displayName": "Total Leads as Seller",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Total Leads as Buyer",
+              "displayName": "Total Leads as Buyer",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Total Payouts",
+              "displayName": "Total Payouts",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Total Amount Paid Out ($)",
+              "displayName": "Total Amount Paid Out ($)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Total Leads Sold",
+              "displayName": "Total Leads Sold",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Verified Status Summary",
+              "displayName": "Verified Status Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Lead Conversion Rate (%)",
+              "displayName": "Lead Conversion Rate (%)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Business Category (AI)",
+              "displayName": "Business Category (AI)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        192
+      ],
+      "id": "bcc28bdb-7c5d-47a2-b393-d4fe7de47e9f",
+      "name": "Add buyer to AirTable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "5eexmqOvku18hLaS",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "sendTo": "zachbush96@gmail.com",
+        "subject": "SUBJECT",
+        "message": "Thank you for signing up for alerts. We will email you when new leads are posted matching your criteria.\nIf you have any questions or suggestions feel free to call or email me.\nBryan Bush\n(c) 817.876.8831\n(e) zachbush96@gmail.com",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        0
+      ],
+      "id": "1d915081-dbe5-47ce-b57a-97c1bd698664",
+      "name": "Send to buyer",
+      "webhookId": "727a6800-5fd0-4d93-9072-10b6e3715aa1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "yu1dLEGYF2q6E4NF",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "zachbush96@gmail.com",
+        "subject": "=New Buyer -  {{ $json.body.company }}",
+        "message": "=New Buyer \n{{ $json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        -192
+      ],
+      "id": "f733aae5-3e8a-4fcf-bd16-203dc9b9ba66",
+      "name": "Email me new buyer",
+      "webhookId": "6dc1048c-c28f-4c3f-9a49-bd6ecc001388",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "yu1dLEGYF2q6E4NF",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.zach.games",
+            "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+            "content-length": "147",
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-US,en;q=0.9",
+            "cache-control": "max-age=0",
+            "cdn-loop": "cloudflare; loops=1",
+            "cf-access-authenticated-user-email": "zachbush96@gmail.com",
+            "cf-access-jwt-assertion": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjczYjkzM2VmMTdlZjhmNjdjZjg4MjllM2E3ZjcxYjZhYzYyYzgzZmI3NGY4YTYwY2UzMmJlM2FkMTg2ZjAwNjYifQ.eyJhdWQiOlsiMDI0MGM3YjdmY2MyMmE4M2YzMTEyNGNhNzliN2VlYzc3OWM0NmQzYjQ0MWQzYWM0ZDk1OTg5ODJiNzUwNDYzMiJdLCJlbWFpbCI6InphY2hidXNoOTZAZ21haWwuY29tIiwiZXhwIjoxNzU2MTQzODk5LCJpYXQiOjE3NTYwNTc0OTksIm5iZiI6MTc1NjA1NzQ5OSwiaXNzIjoiaHR0cHM6Ly96YWNoYnVzaDk2LmNsb3VkZmxhcmVhY2Nlc3MuY29tIiwidHlwZSI6ImFwcCIsImlkZW50aXR5X25vbmNlIjoiWDg5ZGI5NTNZbzg4RG96OSIsInN1YiI6IjA0NzI1NzljLTM5NjMtNTljMy04NTI4LWQwNTFlMGM4MTIyNSIsImNvdW50cnkiOiJVUyJ9.YNdxkfSJBp1iOsDoqlUgRy_pj6A8yMPTlILX4AFM8XVQXUpoIY3cZB4Mc6OhqT3cz1ugLBey0iIeSqhhmUfYxc0h9nY-Dli2g5g2Q5qkM1REdL_xnefWfnkyvV4q_OGbs6ktYRRj-I566sybCFjMxW5BRFMO48cQyceb6djobjHe-oQ_2uAogqPr8Yw-Xc4IP3TEyRuorQjXMnpnZmJmG-RrxWoWl2jPgVG50_qlDYe8OeJFlDdwzMLo20GkJSMq9svT51yCZ_xlWlJsM70oTpNT1_rjorsMVBvJZddxPTGwv5qT3cZPTN_zVenuAnztPZYe1zPRJojaTtJsP7jiZg",
+            "cf-connecting-ip": "207.121.24.46",
+            "cf-ipcountry": "US",
+            "cf-ray": "9745b15f0e633d4f-MIA",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-warp-tag-id": "5ed2f4bc-b72d-482b-bf15-7746ed459332",
+            "connection": "keep-alive",
+            "content-type": "application/x-www-form-urlencoded",
+            "cookie": "CF_Authorization=eyJhbGciOiJSUzI1NiIsImtpZCI6IjczYjkzM2VmMTdlZjhmNjdjZjg4MjllM2E3ZjcxYjZhYzYyYzgzZmI3NGY4YTYwY2UzMmJlM2FkMTg2ZjAwNjYifQ.eyJhdWQiOlsiMDI0MGM3YjdmY2MyMmE4M2YzMTEyNGNhNzliN2VlYzc3OWM0NmQzYjQ0MWQzYWM0ZDk1OTg5ODJiNzUwNDYzMiJdLCJlbWFpbCI6InphY2hidXNoOTZAZ21haWwuY29tIiwiZXhwIjoxNzU2MTQzODk5LCJpYXQiOjE3NTYwNTc0OTksIm5iZiI6MTc1NjA1NzQ5OSwiaXNzIjoiaHR0cHM6Ly96YWNoYnVzaDk2LmNsb3VkZmxhcmVhY2Nlc3MuY29tIiwidHlwZSI6ImFwcCIsImlkZW50aXR5X25vbmNlIjoiWDg5ZGI5NTNZbzg4RG96OSIsInN1YiI6IjA0NzI1NzljLTM5NjMtNTljMy04NTI4LWQwNTFlMGM4MTIyNSIsImNvdW50cnkiOiJVUyJ9.YNdxkfSJBp1iOsDoqlUgRy_pj6A8yMPTlILX4AFM8XVQXUpoIY3cZB4Mc6OhqT3cz1ugLBey0iIeSqhhmUfYxc0h9nY-Dli2g5g2Q5qkM1REdL_xnefWfnkyvV4q_OGbs6ktYRRj-I566sybCFjMxW5BRFMO48cQyceb6djobjHe-oQ_2uAogqPr8Yw-Xc4IP3TEyRuorQjXMnpnZmJmG-RrxWoWl2jPgVG50_qlDYe8OeJFlDdwzMLo20GkJSMq9svT51yCZ_xlWlJsM70oTpNT1_rjorsMVBvJZddxPTGwv5qT3cZPTN_zVenuAnztPZYe1zPRJojaTtJsP7jiZg",
+            "origin": "https://zachbush96.github.io",
+            "priority": "u=0, i",
+            "referer": "https://zachbush96.github.io/",
+            "sec-ch-ua": "\"Google Chrome\";v=\"130\", \"Not?A_Brand\";v=\"99\", \"Chromium\";v=\"130\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Linux\"",
+            "sec-fetch-dest": "iframe",
+            "sec-fetch-mode": "navigate",
+            "sec-fetch-site": "cross-site",
+            "upgrade-insecure-requests": "1",
+            "x-forwarded-for": "207.121.24.46",
+            "x-forwarded-proto": "https"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "company": "TT",
+            "email": "t@me.com",
+            "phone": "8888888888",
+            "radius": "15",
+            "zip": "15444",
+            "extra_zips": "",
+            "cat[]": [
+              "Removal",
+              "Trimming"
+            ],
+            "max_price": "100",
+            "delivery": "Email only"
+          },
+          "webhookUrl": "https://n8n.zach.games/webhook-test/New-Buyer",
+          "executionMode": "test"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Send to buyer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Add buyer to AirTable",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email me new buyer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to buyer": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e762ff2e-40d7-4853-9fdb-bdb5e520e1fc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "83cf903f0fb07939d7b28f2155fe2feda785416b374bc4f4f8641e001e971c03"
+  },
+  "id": "SHM5j94oBaaniMPY",
+  "tags": []
+}
