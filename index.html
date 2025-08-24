@@ -228,8 +228,7 @@
       <form id="buyerForm"
       class="mt-5 space-y-4"
       action="https://n8n.zach.games/webhook-test/New-Buyer"
-      method="POST"
-      target="n8n_sink">
+      method="POST">
         <div class="grid md:grid-cols-2 gap-3">
           <label class="block text-sm">Business name
             <input class="input mt-1" name="company" autocomplete="organization" required />
@@ -300,8 +299,7 @@
       <form id="sellerForm"
       class="mt-5 space-y-4"
       action="https://n8n.zach.games/webhook-test/New-Seller"
-      method="POST"
-      target="n8n_sink">
+      method="POST">
         <div class="grid md:grid-cols-2 gap-3">
           <label class="block text-sm">Your business
             <input class="input mt-1" name="company" autocomplete="organization" required />
@@ -361,8 +359,6 @@
     </div>
   </div>
   
-  <iframe name="n8n_sink" id="n8n_sink" style="display:none;"></iframe>
-
   <script>
     // ----- Config: point forms to n8n -----
     const BUY_LEAD_URL  = 'https://n8n.zach.games/webhook-test/New-Buyer';
@@ -447,37 +443,31 @@
     if (buyerForm) buyerForm.action = BUY_LEAD_URL;
     if (sellerForm) sellerForm.action = POST_LEAD_URL;
 
-    // ----- Hidden-iframe submit (no CORS) -----
-    let lastSubmitted = null;
-
-    if (buyerForm) buyerForm.addEventListener('submit', ()=> {
-      saveProfile(buyerForm);
-      lastSubmitted = { successId: 'buyerSuccess', modal: buyerModal };
-      // no preventDefault -> native POST to target="n8n_sink"
-    });
-
-    if (sellerForm) sellerForm.addEventListener('submit', ()=> {
-      saveProfile(sellerForm);
-      lastSubmitted = { successId: 'sellerSuccess', modal: sellerModal };
-    });
-
-    const sink = document.getElementById('n8n_sink');
-    if (sink) sink.addEventListener('load', () => {
-      if (!lastSubmitted) return;
-
-      // Close the form modal that was just submitted
-      if (lastSubmitted.modal) closeModal(lastSubmitted.modal);
-
-      // Optionally show the per-form success banner (keep or delete these 2 lines)
-      const successEl = document.getElementById(lastSubmitted.successId);
+    // ----- Submit forms via fetch and show thank you -----
+    async function postForm(form, url, modal, successId){
+      const fd = new FormData(form);
+      try {
+        await fetch(url, { method:'POST', body: fd, mode:'no-cors' });
+      } catch(err) {
+        console.error('Form submission failed', err);
+      }
+      const successEl = document.getElementById(successId);
       if (successEl) successEl.classList.remove('hidden');
-
-      // Fire the 2-second Thank You modal
+      closeModal(modal);
       showThanks();
+    }
 
-      lastSubmitted = null;
+    if (buyerForm) buyerForm.addEventListener('submit', (e)=> {
+      e.preventDefault();
+      saveProfile(buyerForm);
+      postForm(buyerForm, BUY_LEAD_URL, buyerModal, 'buyerSuccess');
     });
 
+    if (sellerForm) sellerForm.addEventListener('submit', (e)=> {
+      e.preventDefault();
+      saveProfile(sellerForm);
+      postForm(sellerForm, POST_LEAD_URL, sellerModal, 'sellerSuccess');
+    });
 
     // ----- Keyboard escape to close -----
     window.addEventListener('keydown', (e)=>{
