@@ -225,7 +225,7 @@
       <button data-close class="absolute right-3 top-3 px-2 py-1 rounded-md bg-white/10">✕</button>
       <h3 id="buyerTitle" class="text-2xl font-bold">Get Lead Alerts</h3>
       <p class="mt-1 text-gray-300 text-sm">We’ll email/text you when new leads hit your radius & categories.</p>
-      <form id="buyerForm" class="mt-5 space-y-4" action="https://example.com/buyer-intake-form" method="POST">
+      <form id="buyerForm" class="mt-5 space-y-4" action="/api/submit" method="POST">
         <div class="grid md:grid-cols-2 gap-3">
           <label class="block text-sm">Business name
             <input class="input mt-1" name="company" autocomplete="organization" required />
@@ -279,6 +279,9 @@
           <button class="btn btn-cyan px-5 py-2.5" type="submit">Start Alerts</button>
           <button class="btn px-5 py-2.5 bg-white/10 border border-white/10" data-close type="button">Cancel</button>
         </div>
+        <div id="buyerSuccess" role="status" aria-live="polite" class="hidden mt-3 p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-sm">
+          Alerts activated! We’ll notify you when new leads match your radius and categories.
+        </div>
         <p class="text-xs text-gray-400 mt-2">By continuing, you agree to no spamming, honoring do-not-call, and reporting dead leads.</p>
       </form>
     </div>
@@ -290,7 +293,7 @@
       <button data-close class="absolute right-3 top-3 px-2 py-1 rounded-md bg-white/10">✕</button>
       <h3 id="sellerTitle" class="text-2xl font-bold">Post Overflow Lead</h3>
       <p class="mt-1 text-gray-300 text-sm">2–3 minutes. Contact is hidden until purchased. You set the price.</p>
-      <form id="sellerForm" class="mt-5 space-y-4" action="https://example.com/post-lead-form" method="POST">
+      <form id="sellerForm" class="mt-5 space-y-4" action="/api/submit" method="POST">
         <div class="grid md:grid-cols-2 gap-3">
           <label class="block text-sm">Your business
             <input class="input mt-1" name="company" autocomplete="organization" required />
@@ -331,6 +334,9 @@
           <button class="btn btn-emerald px-5 py-2.5" type="submit">Post Lead</button>
           <button class="btn px-5 py-2.5 bg-white/10 border border-white/10" data-close type="button">Cancel</button>
         </div>
+        <div id="sellerSuccess" role="status" aria-live="polite" class="hidden mt-3 p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-sm">
+          Lead received! We’ll share it with matching buyers and email you updates.
+        </div>
         <p class="text-xs text-gray-400 mt-2">We charge a 1% platform fee on sale. You can edit or withdraw unsold leads anytime.</p>
       </form>
     </div>
@@ -338,8 +344,8 @@
 
   <script>
     // ----- Config: swap these with your live form URLs if needed -----
-    const POST_LEAD_URL = 'https://forms.gle/4J4BSjho18Bz8tNu5';
-    const BUY_LEAD_URL  = 'https://forms.gle/6tYyb2hmUtg3bY257';
+    const POST_LEAD_URL = '/api/submit';
+    const BUY_LEAD_URL  = '/api/submit';
 
     // ----- Wire up dynamic year -----
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -360,8 +366,8 @@
     function openModal(el){ el.setAttribute('aria-hidden','false'); }
     function closeModal(el){ el.setAttribute('aria-hidden','true'); }
 
-    openersBuyer.forEach(btn=>btn.addEventListener('click',()=>openModal(buyerModal)));
-    openersSeller.forEach(btn=>btn.addEventListener('click',()=>openModal(sellerModal)));
+    openersBuyer.forEach(btn=>btn.addEventListener('click',()=>{ const s=document.getElementById('buyerSuccess'); if(s) s.classList.add('hidden'); openModal(buyerModal); }));
+    openersSeller.forEach(btn=>btn.addEventListener('click',()=>{ const s=document.getElementById('sellerSuccess'); if(s) s.classList.add('hidden'); openModal(sellerModal); }));
 
     document.querySelectorAll('[data-close]').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
@@ -397,9 +403,27 @@
     if (buyerForm) buyerForm.action = BUY_LEAD_URL;
     if (sellerForm) sellerForm.action = POST_LEAD_URL;
 
-    // Save profile on submit
-    if (buyerForm) buyerForm.addEventListener('submit', ()=>saveProfile(buyerForm));
-    if (sellerForm) sellerForm.addEventListener('submit', ()=>saveProfile(sellerForm));
+    // AJAX submit + success messaging
+    async function ajaxSubmit(form, successId, modalEl){
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const original = submitBtn ? submitBtn.textContent : null;
+      if (submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Submitting…'; }
+      try{
+        const res = await fetch(form.action || '/api/submit', { method: form.method || 'POST', body: new FormData(form) });
+        const data = await res.json().catch(()=>({}));
+        if (!res.ok || data.ok === false){ throw new Error((data && data.error) || 'Submission failed'); }
+        const successEl = document.getElementById(successId);
+        if (successEl){ successEl.classList.remove('hidden'); }
+        if (modalEl){ setTimeout(()=> closeModal(modalEl), 2000); }
+      }catch(err){
+        alert(err && err.message ? err.message : 'There was a problem sending your form.');
+      }finally{
+        if (submitBtn){ submitBtn.disabled = false; if (original!==null) submitBtn.textContent = original; }
+      }
+    }
+
+    if (buyerForm) buyerForm.addEventListener('submit', (e)=>{ e.preventDefault(); saveProfile(buyerForm); ajaxSubmit(buyerForm, 'buyerSuccess', buyerModal); });
+    if (sellerForm) sellerForm.addEventListener('submit', (e)=>{ e.preventDefault(); saveProfile(sellerForm); ajaxSubmit(sellerForm, 'sellerSuccess', sellerModal); });
 
     // Keyboard escape to close
     window.addEventListener('keydown', (e)=>{
