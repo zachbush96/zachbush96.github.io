@@ -225,7 +225,11 @@
       <button data-close class="absolute right-3 top-3 px-2 py-1 rounded-md bg-white/10">✕</button>
       <h3 id="buyerTitle" class="text-2xl font-bold">Get Lead Alerts</h3>
       <p class="mt-1 text-gray-300 text-sm">We’ll email/text you when new leads hit your radius & categories.</p>
-      <form id="buyerForm" class="mt-5 space-y-4" action="/api/submit" method="POST">
+      <form id="buyerForm"
+      class="mt-5 space-y-4"
+      action="https://n8n.zach.games/webhook-test/New-Buyer"
+      method="POST"
+      target="n8n_sink">
         <div class="grid md:grid-cols-2 gap-3">
           <label class="block text-sm">Business name
             <input class="input mt-1" name="company" autocomplete="organization" required />
@@ -293,7 +297,11 @@
       <button data-close class="absolute right-3 top-3 px-2 py-1 rounded-md bg-white/10">✕</button>
       <h3 id="sellerTitle" class="text-2xl font-bold">Post Overflow Lead</h3>
       <p class="mt-1 text-gray-300 text-sm">2–3 minutes. Contact is hidden until purchased. You set the price.</p>
-      <form id="sellerForm" class="mt-5 space-y-4" action="/api/submit" method="POST">
+      <form id="sellerForm"
+      class="mt-5 space-y-4"
+      action="https://n8n.zach.games/webhook-test/New-Seller"
+      method="POST"
+      target="n8n_sink">
         <div class="grid md:grid-cols-2 gap-3">
           <label class="block text-sm">Your business
             <input class="input mt-1" name="company" autocomplete="organization" required />
@@ -344,12 +352,7 @@
 
   <script>
     // ----- Config: point forms to n8n -----
-    // Buyer goes to your provided test webhook.
-    // TIP: when you publish, switch to /webhook/ instead of /webhook-test/
     const BUY_LEAD_URL  = 'https://n8n.zach.games/webhook-test/New-Buyer';
-
-    // Either reuse the same endpoint or create a separate one in n8n (recommended)
-    // Example placeholder for sellers:
     const POST_LEAD_URL = 'https://n8n.zach.games/webhook-test/New-Seller';
 
     // ----- Wire up dynamic year -----
@@ -365,15 +368,25 @@
     // ----- Modal helpers -----
     const buyerModal = document.getElementById('buyerModal');
     const sellerModal = document.getElementById('sellerModal');
-    const openersBuyer = ['openBuyer','openBuyer_h','openBuyer_b','openBuyer_m','openBuyer_market','openBuyer_card'].map(id=>document.getElementById(id)).filter(Boolean);
-    const openersSeller = ['openSeller','openSeller_h','openSeller_b','openSeller_m','openSeller_card'].map(id=>document.getElementById(id)).filter(Boolean);
+    const openersBuyer = ['openBuyer','openBuyer_h','openBuyer_b','openBuyer_m','openBuyer_market','openBuyer_card']
+      .map(id=>document.getElementById(id)).filter(Boolean);
+    const openersSeller = ['openSeller','openSeller_h','openSeller_b','openSeller_m','openSeller_card']
+      .map(id=>document.getElementById(id)).filter(Boolean);
 
-    function openModal(el){ el.setAttribute('aria-hidden','false'); }
-    function closeModal(el){ el.setAttribute('aria-hidden','true'); }
+    function openModal(el){ if (el) el.setAttribute('aria-hidden','false'); }
+    function closeModal(el){ if (el) el.setAttribute('aria-hidden','true'); }
 
-    openersBuyer.forEach(btn=>btn.addEventListener('click',()=>{ const s=document.getElementById('buyerSuccess'); if(s) s.classList.add('hidden'); openModal(buyerModal); }));
-    openersSeller.forEach(btn=>btn.addEventListener('click',()=>{ const s=document.getElementById('sellerSuccess'); if(s) s.classList.add('hidden'); openModal(sellerModal); }));
+    // ✅ Re-enable the click handlers that open the modals
+    openersBuyer.forEach(btn=>btn.addEventListener('click',()=>{
+      const s=document.getElementById('buyerSuccess'); if(s) s.classList.add('hidden');
+      openModal(buyerModal);
+    }));
+    openersSeller.forEach(btn=>btn.addEventListener('click',()=>{
+      const s=document.getElementById('sellerSuccess'); if(s) s.classList.add('hidden');
+      openModal(sellerModal);
+    }));
 
+    // Close buttons and backdrop click
     document.querySelectorAll('[data-close]').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
         const m = e.target.closest('.modal');
@@ -401,71 +414,49 @@
       }catch{}
     }
 
+    // ✅ Declare forms BEFORE using them anywhere
     const buyerForm = document.getElementById('buyerForm');
     const sellerForm = document.getElementById('sellerForm');
     [buyerForm, sellerForm].forEach(f=>{ if (f) loadProfileInto(f); });
 
-    // ----- Set form action URLs to n8n -----
+    // Point form actions to n8n
     if (buyerForm) buyerForm.action = BUY_LEAD_URL;
     if (sellerForm) sellerForm.action = POST_LEAD_URL;
 
-    // ----- AJAX submit + success messaging (n8n-friendly) -----
-    async function ajaxSubmit(form, successId, modalEl){
-      const submitBtn = form.querySelector('button[type="submit"]');
-      const original = submitBtn ? submitBtn.textContent : null;
-      if (submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Submitting…'; }
+    // ----- Hidden-iframe submit (no CORS) -----
+    let lastSubmitted = null;
 
-      try{
-        // Send as multipart/form-data (n8n parses this fine).
-        // Don't set Content-Type manually; the browser will set the correct boundary.
-        const res = await fetch(form.action, {
-          method: form.method || 'POST',
-          body: new FormData(form),
-          // If your site is on a different origin than n8n.zach.games and CORS isn't enabled in n8n,
-          // this will fail at the browser level. In that case, proxy via your own backend.
-        });
+    if (buyerForm) buyerForm.addEventListener('submit', ()=> {
+      saveProfile(buyerForm);
+      lastSubmitted = { successId: 'buyerSuccess', modal: buyerModal };
+      // no preventDefault -> native POST to target="n8n_sink"
+    });
 
-        // Treat any 2xx as success; parse JSON only if it's JSON.
-        const isOK = res.ok;
-        let parsed = null;
-        const ct = res.headers.get('content-type') || '';
-        if (ct.includes('application/json')) {
-          parsed = await res.json().catch(()=>null);
-        } else {
-          // Read text to avoid body-lock if needed (optional)
-          await res.text().catch(()=>null);
-        }
+    if (sellerForm) sellerForm.addEventListener('submit', ()=> {
+      saveProfile(sellerForm);
+      lastSubmitted = { successId: 'sellerSuccess', modal: sellerModal };
+    });
 
-        if (!isOK) {
-          const errMsg = (parsed && (parsed.error || parsed.message)) || `Submission failed (${res.status})`;
-          throw new Error(errMsg);
-        }
-
-        // Success UI
-        const successEl = document.getElementById(successId);
-        if (successEl){ successEl.classList.remove('hidden'); }
-        if (modalEl){ setTimeout(()=> closeModal(modalEl), 2000); }
-
-      } catch(err){
-        alert(err && err.message ? err.message : 'There was a problem sending your form.');
-      } finally{
-        if (submitBtn){ submitBtn.disabled = false; if (original!==null) submitBtn.textContent = original; }
-      }
-    }
-
-    if (buyerForm) buyerForm.addEventListener('submit', (e)=>{ e.preventDefault(); saveProfile(buyerForm); ajaxSubmit(buyerForm, 'buyerSuccess', buyerModal); });
-    if (sellerForm) sellerForm.addEventListener('submit', (e)=>{ e.preventDefault(); saveProfile(sellerForm); ajaxSubmit(sellerForm, 'sellerSuccess', sellerModal); });
+    const sink = document.getElementById('n8n_sink');
+    if (sink) sink.addEventListener('load', () => {
+      if (!lastSubmitted) return;
+      const successEl = document.getElementById(lastSubmitted.successId);
+      if (successEl) successEl.classList.remove('hidden');
+      if (lastSubmitted.modal) setTimeout(()=> closeModal(lastSubmitted.modal), 2000);
+      lastSubmitted = null;
+    });
 
     // ----- Keyboard escape to close -----
     window.addEventListener('keydown', (e)=>{
       if (e.key === 'Escape'){
-        if (buyerModal) closeModal(buyerModal);
-        if (sellerModal) closeModal(sellerModal);
+        closeModal(buyerModal);
+        closeModal(sellerModal);
       }
     });
   </script>
+
+  
+  <iframe name="n8n_sink" id="n8n_sink" style="display:none;"></iframe>
+
 </body>
 </html>
-
-
-
