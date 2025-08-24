@@ -244,7 +244,7 @@
         </div>
         <div class="grid md:grid-cols-2 gap-3">
           <label class="block text-sm">Primary zip
-            <input class="input mt-1" name="zip" pattern="\\d{5}" placeholder="15237" required />
+            <input class="input mt-1" name="zip" placeholder="15237" required />
           </label>
           <label class="block text-sm">Additional zips (comma)
             <input class="input mt-1" name="extra_zips" placeholder="15210, 15108" />
@@ -307,7 +307,7 @@
             <input class="input mt-1" name="city" placeholder="Pittsburgh" required />
           </label>
           <label class="block text-sm">Zip
-            <input class="input mt-1" name="zip" pattern="\\d{5}" placeholder="15237" required />
+            <input class="input mt-1" name="zip" placeholder="15237" required />
           </label>
         </div>
         <div class="grid md:grid-cols-2 gap-3">
@@ -343,9 +343,14 @@
   </div>
 
   <script>
-    // ----- Config: swap these with your live form URLs if needed -----
-    const POST_LEAD_URL = '/api/submit';
-    const BUY_LEAD_URL  = '/api/submit';
+    // ----- Config: point forms to n8n -----
+    // Buyer goes to your provided test webhook.
+    // TIP: when you publish, switch to /webhook/ instead of /webhook-test/
+    const BUY_LEAD_URL  = 'https://n8n.zach.games/webhook-test/New-Buyer';
+
+    // Either reuse the same endpoint or create a separate one in n8n (recommended)
+    // Example placeholder for sellers:
+    const POST_LEAD_URL = 'https://n8n.zach.games/webhook-test/New-Seller';
 
     // ----- Wire up dynamic year -----
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -376,6 +381,7 @@
       });
     });
     [buyerModal, sellerModal].forEach(m=>{
+      if (!m) return;
       m.addEventListener('click', (e)=>{ if(e.target===m) closeModal(m); });
     });
 
@@ -399,25 +405,50 @@
     const sellerForm = document.getElementById('sellerForm');
     [buyerForm, sellerForm].forEach(f=>{ if (f) loadProfileInto(f); });
 
-    // Set form action URLs
+    // ----- Set form action URLs to n8n -----
     if (buyerForm) buyerForm.action = BUY_LEAD_URL;
     if (sellerForm) sellerForm.action = POST_LEAD_URL;
 
-    // AJAX submit + success messaging
+    // ----- AJAX submit + success messaging (n8n-friendly) -----
     async function ajaxSubmit(form, successId, modalEl){
       const submitBtn = form.querySelector('button[type="submit"]');
       const original = submitBtn ? submitBtn.textContent : null;
       if (submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Submitting…'; }
+
       try{
-        const res = await fetch(form.action || '/api/submit', { method: form.method || 'POST', body: new FormData(form) });
-        const data = await res.json().catch(()=>({}));
-        if (!res.ok || data.ok === false){ throw new Error((data && data.error) || 'Submission failed'); }
+        // Send as multipart/form-data (n8n parses this fine).
+        // Don't set Content-Type manually; the browser will set the correct boundary.
+        const res = await fetch(form.action, {
+          method: form.method || 'POST',
+          body: new FormData(form),
+          // If your site is on a different origin than n8n.zach.games and CORS isn't enabled in n8n,
+          // this will fail at the browser level. In that case, proxy via your own backend.
+        });
+
+        // Treat any 2xx as success; parse JSON only if it's JSON.
+        const isOK = res.ok;
+        let parsed = null;
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          parsed = await res.json().catch(()=>null);
+        } else {
+          // Read text to avoid body-lock if needed (optional)
+          await res.text().catch(()=>null);
+        }
+
+        if (!isOK) {
+          const errMsg = (parsed && (parsed.error || parsed.message)) || `Submission failed (${res.status})`;
+          throw new Error(errMsg);
+        }
+
+        // Success UI
         const successEl = document.getElementById(successId);
         if (successEl){ successEl.classList.remove('hidden'); }
         if (modalEl){ setTimeout(()=> closeModal(modalEl), 2000); }
-      }catch(err){
+
+      } catch(err){
         alert(err && err.message ? err.message : 'There was a problem sending your form.');
-      }finally{
+      } finally{
         if (submitBtn){ submitBtn.disabled = false; if (original!==null) submitBtn.textContent = original; }
       }
     }
@@ -425,12 +456,16 @@
     if (buyerForm) buyerForm.addEventListener('submit', (e)=>{ e.preventDefault(); saveProfile(buyerForm); ajaxSubmit(buyerForm, 'buyerSuccess', buyerModal); });
     if (sellerForm) sellerForm.addEventListener('submit', (e)=>{ e.preventDefault(); saveProfile(sellerForm); ajaxSubmit(sellerForm, 'sellerSuccess', sellerModal); });
 
-    // Keyboard escape to close
+    // ----- Keyboard escape to close -----
     window.addEventListener('keydown', (e)=>{
       if (e.key === 'Escape'){
-        closeModal(buyerModal); closeModal(sellerModal);
+        if (buyerModal) closeModal(buyerModal);
+        if (sellerModal) closeModal(sellerModal);
       }
     });
   </script>
 </body>
 </html>
+
+
+
