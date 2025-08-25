@@ -1,5 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import os
+import requests
+import stripe
+import smtplib
+from email.message import EmailMessage
 from dotenv import load_dotenv
 
 
@@ -9,6 +13,48 @@ app.secret_key = 'change_this_secret_key'  # Needed for session
 load_dotenv()
 airtable_api_key = os.getenv('AIRTABLE_API_KEY')
 airtable_base_id = os.getenv('AIRTABLE_BASE_ID')
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+stripe_public_key = os.getenv('STRIPE_PUBLISHABLE_KEY')
+smtp_server = os.getenv('SMTP_SERVER')
+smtp_port = int(os.getenv('SMTP_PORT', 587))
+smtp_user = os.getenv('SMTP_USER')
+smtp_password = os.getenv('SMTP_PASSWORD')
+
+
+def fetch_lead(uuid):
+    """Fetch a single lead from Airtable by UUID."""
+    url = f"https://api.airtable.com/v0/{airtable_base_id}/Leads"
+    headers = {
+        "Authorization": f"Bearer {airtable_api_key}"
+    }
+    params = {
+        "filterByFormula": f"{{UUID}}='{uuid}'"
+    }
+    resp = requests.get(url, headers=headers, params=params)
+    records = resp.json().get('records', [])
+    if not records:
+        return None
+    return records[0]['fields']
+
+
+def mask_customer_details(fields):
+    exclude = ['Customer Name', 'Customer Email', 'Customer Phone']
+    return {k: v for k, v in fields.items() if k not in exclude}
+
+
+def send_lead_email(to_email, lead_fields):
+    if not (smtp_server and smtp_user and smtp_password):
+        return
+    msg = EmailMessage()
+    msg['Subject'] = 'Lead Details'
+    msg['From'] = smtp_user
+    msg['To'] = to_email
+    body = '\n'.join(f"{k}: {v}" for k, v in lead_fields.items())
+    msg.set_content(body)
+    with smtplib.SMTP(smtp_server, smtp_port) as server:
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+        server.send_message(msg)
 
 
 @app.route('/')
@@ -71,6 +117,50 @@ def businesses():
     }
     response = requests.get(url, headers=headers)
     return response.json()
+
+
+@app.route('/lead/<uuid>')
+def lead_detail(uuid):
+    fields = fetch_lead(uuid)
+    if not fields:
+        return "Lead not found", 404
+    display = mask_customer_details(fields)
+    return render_template('lead.html', lead=display, uuid=uuid, publishable_key=stripe_public_key)
+
+
+@app.route('/create-checkout-session/<uuid>', methods=['POST'])
+def create_checkout_session(uuid):
+    fields = fetch_lead(uuid)
+    if not fields:
+        return {"error": "Lead not found"}, 404
+    price = int(float(fields.get('Price', 0)) * 100)
+    session = stripe.checkout.Session.create(
+        mode='payment',
+        line_items=[{
+            'price_data': {
+                'currency': 'usd',
+                'product_data': {'name': fields.get('Description', 'Lead')},
+                'unit_amount': price
+            },
+            'quantity': 1
+        }],
+        success_url=url_for('lead_success', uuid=uuid, _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+        cancel_url=url_for('lead_detail', uuid=uuid, _external=True)
+    )
+    return {'id': session.id}
+
+
+@app.route('/lead/<uuid>/success')
+def lead_success(uuid):
+    session_id = request.args.get('session_id')
+    if not session_id:
+        return redirect(url_for('lead_detail', uuid=uuid))
+    checkout_session = stripe.checkout.Session.retrieve(session_id)
+    customer_email = checkout_session.get('customer_details', {}).get('email')
+    fields = fetch_lead(uuid)
+    if customer_email and fields:
+        send_lead_email(customer_email, fields)
+    return render_template('lead_success.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
