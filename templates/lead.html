@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lead Details</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    :root { color-scheme: dark; }
+    .gradient{background:
+      radial-gradient(900px 480px at 10% -10%, #86efac33, transparent 60%),
+      radial-gradient(800px 520px at 110% 10%, #22d3ee33, transparent 60%),
+      linear-gradient(180deg,#0b1220 0%,#0b1220 60%,#0b1220 100%)}
+    .glass{background:rgba(255,255,255,.06);backdrop-filter:blur(10px)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:0.9rem;font-weight:600}
+    .btn-cyan{background:#22d3ee;color:#0b1220} .btn-cyan:hover{background:#06b6d4}
+  </style>
+</head>
+<body class="gradient text-gray-100 antialiased">
+  <header class="glass border-b border-white/10">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-emerald-400 rounded-xl flex items-center justify-center font-black text-slate-900">TL</div>
+        <span class="font-semibold tracking-wide">Tree Lead Exchange</span>
+      </div>
+      <a href="/" class="text-gray-300 hover:text-white">Home</a>
+    </div>
+  </header>
+
+  <section class="max-w-4xl mx-auto px-4 py-10">
+    <h1 class="text-3xl font-bold mb-6">Lead Details</h1>
+    <ul class="space-y-2">
+      {% for key, value in lead.items() %}
+      <li><strong>{{ key }}:</strong> {{ value }}</li>
+      {% endfor %}
+    </ul>
+    <button id="checkout-button" class="mt-8 btn btn-cyan px-5 py-3">Purchase Lead</button>
+  </section>
+
+  <script src="https://js.stripe.com/v3/"></script>
+  <script>
+    var stripe = Stripe('{{ publishable_key }}');
+    var checkoutButton = document.getElementById('checkout-button');
+    if (checkoutButton) {
+      checkoutButton.addEventListener('click', function () {
+        fetch('/create-checkout-session/{{ uuid }}', { method: 'POST' })
+          .then(function (response) { return response.json(); })
+          .then(function (session) { return stripe.redirectToCheckout({ sessionId: session.id }); })
+          .then(function (result) { if (result.error) { alert(result.error.message); } })
+          .catch(function (error) { console.error('Error:', error); });
+      });
+    }
+  </script>
+</body>
+</html>
+
