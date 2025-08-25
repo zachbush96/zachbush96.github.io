@@ -227,7 +227,7 @@
       <p class="mt-1 text-gray-300 text-sm">We’ll email/text you when new leads hit your radius & categories.</p>
       <form id="buyerForm"
       class="mt-5 space-y-4"
-      action="https://n8n.zach.games/webhook-test/New-Buyer"
+      action="https://n8n.zach.games/webhook/New-Buyer"
       method="POST">
         <div class="grid md:grid-cols-2 gap-3">
           <label class="block text-sm">Business name
@@ -298,7 +298,7 @@
       <p class="mt-1 text-gray-300 text-sm">2–3 minutes. Contact is hidden until purchased. You set the price.</p>
       <form id="sellerForm"
       class="mt-5 space-y-4"
-      action="https://n8n.zach.games/webhook-test/New-Seller"
+      action="https://n8n.zach.games/webhook/New-Seller"
       method="POST">
         <div class="grid md:grid-cols-2 gap-3">
           <label class="block text-sm">Your business
@@ -313,7 +313,7 @@
             <input class="input mt-1" name="city" placeholder="Pittsburgh" required />
           </label>
           <label class="block text-sm">Zip
-            <input class="input mt-1" name="zip" placeholder="15237" required />
+            <input class="input mt-1" name="Customer Zip" placeholder="15237" required />
           </label>
         </div>
         <div class="grid md:grid-cols-2 gap-3">
@@ -361,10 +361,10 @@
   
   <script>
     // ----- Config: point forms to n8n -----
-    const BUY_LEAD_URL  = 'https://n8n.zach.games/webhook-test/New-Buyer';
-    const POST_LEAD_URL = 'https://n8n.zach.games/webhook-test/New-Seller';
-    //const BUY_LEAD_URL  = 'https://n8n.zach.games/webhook/New-Buyer';
-    //const POST_LEAD_URL = 'https://n8n.zach.games/webhook/New-Seller';
+    //const BUY_LEAD_URL  = 'https://n8n.zach.games/webhook-test/New-Buyer';
+    //const POST_LEAD_URL = 'https://n8n.zach.games/webhook-test/New-Seller';
+    const BUY_LEAD_URL  = 'https://n8n.zach.games/webhook/New-Buyer';
+    const POST_LEAD_URL = 'https://n8n.zach.games/webhook/New-Seller';
 
     // ----- Wire up dynamic year -----
     document.getElementById('year').textContent = new Date().getFullYear();
