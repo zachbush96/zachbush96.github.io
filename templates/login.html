@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-gray-100 flex items-center justify-center min-h-screen">
+    <form method="post" class="bg-gray-800 p-8 rounded-lg shadow-lg w-80">
+        <h2 class="text-xl font-bold mb-4">Admin Login</h2>
+        {% if error %}
+            <div class="mb-4 text-red-400">{{ error }}</div>
+        {% endif %}
+        <div class="mb-4">
+            <label class="block mb-1" for="username">Username</label>
+            <input class="input w-full px-3 py-2 rounded bg-gray-700 border border-gray-600" type="text" id="username" name="username" required autofocus>
+        </div>
+        <div class="mb-6">
+            <label class="block mb-1" for="password">Password</label>
+            <input class="input w-full px-3 py-2 rounded bg-gray-700 border border-gray-600" type="password" id="password" name="password" required>
+        </div>
+        <button class="btn btn-cyan w-full py-2 bg-cyan-400 text-gray-900 rounded font-bold" type="submit">Sign In</button>
+    </form>
+</body>
+</html>
