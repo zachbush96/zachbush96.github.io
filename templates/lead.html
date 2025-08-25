@@ -14,6 +14,8 @@
     .glass{background:rgba(255,255,255,.06);backdrop-filter:blur(10px)}
     .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:0.9rem;font-weight:600}
     .btn-cyan{background:#22d3ee;color:#0b1220} .btn-cyan:hover{background:#06b6d4}
+    .badge{font-size:.70rem;padding:.25rem .5rem;border-radius:.45rem;background:rgba(255,255,255,.1)}
+    .chip{padding:.35rem .6rem;border-radius:.7rem;background:rgba(255,255,255,.08);font-size:.75rem}
   </style>
 </head>
 <body class="gradient text-gray-100 antialiased">
@@ -27,14 +29,27 @@
     </div>
   </header>
 
-  <section class="max-w-4xl mx-auto px-4 py-10">
-    <h1 class="text-3xl font-bold mb-6">Lead Details</h1>
-    <ul class="space-y-2">
-      {% for key, value in lead.items() %}
-      <li><strong>{{ key }}:</strong> {{ value }}</li>
-      {% endfor %}
-    </ul>
-    <button id="checkout-button" class="mt-8 btn btn-cyan px-5 py-3">Purchase Lead</button>
+  <section class="max-w-2xl mx-auto px-4 py-10">
+    <div class="glass border border-white/10 rounded-2xl p-5">
+      <div class="flex items-center justify-between text-sm mb-2">
+        <span class="badge">{{ lead.get('City/ZIP', 'Lead') }}</span>
+        <span class="text-gray-300">Age: {{ lead.get('Lead Age', 'N/A') }}</span>
+      </div>
+      <h1 class="text-xl font-bold mb-2">{{ lead.get('Description', 'Lead Details') }}</h1>
+      <ul class="text-sm text-gray-300 space-y-2 mb-4">
+        <li>• Category: <span class="chip">{{ lead.get('Category', 'N/A') }}</span></li>
+        <li>• Exclusivity: <span class="chip">{{ lead.get('Exclusivity', 'N/A') }}</span></li>
+        <li>• Asking: <span class="font-semibold text-white">${{ lead.get('Asking Price ($)', 'N/A') }}</span></li>
+      </ul>
+      <div class="mt-4 grid grid-cols-3 gap-3 text-center text-xs mb-4">
+        <div class="bg-white/5 rounded-lg p-3">Freshness<br><span class="text-emerald-400 font-semibold">{{ lead.get('Lead Age', 'N/A') }}</span></div>
+        <div class="bg-white/5 rounded-lg p-3">Category<br><span class="font-semibold">{{ lead.get('Category', 'N/A') }}</span></div>
+        <div class="bg-white/5 rounded-lg p-3">ZIP<br><span class="font-semibold">{{ lead.get('City/ZIP', 'N/A') }}</span></div>
+      </div>
+      <div class="mt-5 flex gap-3">
+        <button id="checkout-button" class="btn btn-cyan px-4 py-2 flex-1">Purchase Lead</button>
+      </div>
+    </div>
   </section>
 
   <script src="https://js.stripe.com/v3/"></script>

@@ -28,17 +28,21 @@ def fetch_lead(uuid):
         "Authorization": f"Bearer {airtable_api_key}"
     }
     params = {
-        "filterByFormula": f"{{UUID}}='{uuid}'"
+        "filterByFormula": f"{{Lead ID}}='{uuid}'"
     }
     resp = requests.get(url, headers=headers, params=params)
     records = resp.json().get('records', [])
+    print(records)
     if not records:
         return None
     return records[0]['fields']
 
 
 def mask_customer_details(fields):
-    exclude = ['Customer Name', 'Customer Email', 'Customer Phone']
+    exclude = [
+        'Customer Name', 'Customer Email', 'Customer Phone', 'Customer Contact', 'Seller', 
+        'Lead Summary (AI)', 'Lead Category (AI)', 'Lead ID', 'Status', 'Sold Price ($)', 
+        'Admin Fee 1% ($)', 'Interest Count', 'Total Payouts', 'Contact Name', 'Contact Email']
     return {k: v for k, v in fields.items() if k not in exclude}
 
 
