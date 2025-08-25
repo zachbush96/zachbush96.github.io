@@ -1,7 +1,7 @@
 # Tree Lead Exchange — Overflow Leads, Sold Fast
 
-A tiny webapp + automation pipeline where local tree service companies **sell overflow leads** and **buy ready jobs** by ZIP + category.  
-**Frontend** is a static page (Tailwind CDN). **Backend** is a pair of `n8n` webhook workflows that write to **Airtable**.
+A tiny webapp + automation pipeline where local tree service companies **sell overflow leads** and **buy ready jobs** by ZIP + category.
+**Frontend** is served by a small Flask app (Tailwind CDN). **Backend** is a pair of `n8n` webhook workflows that write to **Airtable**.
 
 > **Links**
 >
@@ -389,3 +389,12 @@ Days Since Created (formula)
 Interest Summary (AI) / Recommended Next Action (AI)
 
 </details>
+
+## Local Dev
+
+Run the Flask app locally:
+
+```bash
+pip install -r requirements.txt
+python app.py
+```
