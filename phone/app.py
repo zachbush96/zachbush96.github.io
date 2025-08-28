@@ -39,7 +39,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 HEADER_ALIASES = {
     "phone": {"phone", "phone_number", "number", "mobile", "cell"},
     "name": {"name", "full_name", "first_name"},
-    "business": {"business", "company", "business_name"},
+    "business": {"business", "company", "business_name", "name"},
     "address": {"address", "addr", "street"},
 }
 
@@ -83,21 +83,111 @@ def jinja_render(template_str: str, context: Dict[str, Any]) -> str:
     return template.render(**context)
 
 APPLE_SCRIPT_SEND = r'''
+on stripNonDigits(s)
+    set outT to ""
+    repeat with c in s
+        set ch to (c as text)
+        if ch is in "0123456789" then set outT to outT & ch
+    end repeat
+    return outT
+end stripNonDigits
+
+on last10(s)
+    set d to stripNonDigits(s)
+    if (length of d) > 10 then
+        return text -10 thru -1 of d
+    else
+        return d
+    end if
+end last10
+
+on chatMatchesTarget(aChat, target10)
+    try
+        set plist to participants of aChat
+    on error
+        return false
+    end try
+    repeat with p in plist
+        set p10 to last10(p as text)
+        if p10 is not "" and p10 is equal to target10 then return true
+    end repeat
+    return false
+end chatMatchesTarget
+
 on run {targetPhone, targetMessage}
+    set targetPhone to targetPhone as text
+    set want10 to last10(targetPhone)
+
     tell application "Messages"
-        -- Prefer iMessage service
-        set iService to first service whose service type = iMessage
+        if it is not running then activate
+
+        set iService to missing value
+        set sService to missing value
+        set serviceListDesc to {}
+
+        -- enumerate services for debugging
+        repeat with svc in services
+            try
+                set stype to service type of svc
+            on error
+                set stype to "unknown"
+            end try
+            try
+                set sid to id of svc
+            on error
+                set sid to "no-id"
+            end try
+            set end of serviceListDesc to ("type=" & stype & ", id=" & sid)
+            if stype is iMessage and iService is missing value then set iService to svc
+            if stype is SMS and sService is missing value then set sService to svc
+        end repeat
+
+        -- prefer iMessage
+        set targetService to iService
+        if targetService is missing value then set targetService to sService
+
+        if targetService is missing value then
+            error "No iMessage or SMS service available. Services seen: " & (serviceListDesc as text)
+        end if
+
+        -- 1) try to find an existing chat whose participants match (last 10)
+        set theChat to missing value
         try
-            set theChat to make new text chat with properties {service:iService, participants:{targetPhone}}
-        on error errMsg number errNum
-            -- Optional SMS fallback (uncomment to enable)
-            -- set sService to first service whose service type = SMS
-            -- set theChat to make new text chat with properties {service:sService, participants:{targetPhone}}
+            set allChats to chats
+            repeat with c in allChats
+                if chatMatchesTarget(c, want10) then
+                    set theChat to c
+                    exit repeat
+                end if
+            end repeat
         end try
+
+        -- 2) if not found, try a buddy on the chosen service
+        if theChat is missing value then
+            try
+                set theBuddy to buddy targetPhone of targetService
+                -- Sometimes buddy lookup works even if not in Contacts; if it does, send directly.
+                send targetMessage to theBuddy
+                return
+            end try
+        end if
+
+        -- 3) if still missing, attempt new chat creation
+        if theChat is missing value then
+            try
+                set theChat to make new text chat with properties {service:targetService, participants:{targetPhone}}
+            end try
+        end if
+
+        if theChat is missing value then
+            error "Could not create/resolve a chat for " & targetPhone & " via " & (service type of targetService as text) & ". Services: " & (serviceListDesc as text) & ". Check iMessage sign-in and, for SMS, iPhone Text Message Forwarding."
+        end if
+
         send targetMessage to theChat
     end tell
 end run
 '''
+
 
 def send_imessage(phone: str, message: str) -> None:
     """Send a single iMessage via AppleScript. Raises CalledProcessError on failure."""
