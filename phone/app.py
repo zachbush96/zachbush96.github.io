@@ -15,6 +15,8 @@ from flask import (
     session, send_from_directory, flash
 )
 from jinja2 import Environment, StrictUndefined
+import sqlite3
+from pathlib import Path
 
 # ------------------------------
 # Config
@@ -189,9 +191,9 @@ end run
 '''
 
 
-def send_imessage(phone: str, message: str) -> None:
-    """Send a single iMessage via AppleScript. Raises CalledProcessError on failure."""
-    # Use osascript with inline script and pass arguments to avoid quoting issues
+def send_imessage(phone: str, message: str) -> float:
+    """Send a single iMessage via AppleScript. Returns unix timestamp just before send."""
+    send_start = time.time()
     completed = subprocess.run(
         ["osascript", "-", phone, message],
         input=APPLE_SCRIPT_SEND.encode("utf-8"),
@@ -199,7 +201,156 @@ def send_imessage(phone: str, message: str) -> None:
         stderr=subprocess.PIPE,
         check=True,
     )
-    return
+    return send_start
+
+
+# ------------------------------
+# Delivery / Failure detection via Messages chat.db
+# ------------------------------
+
+CHAT_DB_PATHS = [
+    Path.home() / "Library/Messages/chat.db",                       # standard
+    Path.home() / "Library/Messages/chat.db-wal",                   # WAL mode (presence check)
+]
+
+def _chatdb_path() -> Path:
+    # Prefer main db path; existence check
+    p = CHAT_DB_PATHS[0]
+    if p.exists():
+        return p
+    # As a fallback, still return the canonical path (caller will handle errors)
+    return p
+
+def _last10_digits(s: str) -> str:
+    return re.sub(r"\D+", "", s)[-10:] if s else ""
+
+def _apple_epoch_ns_to_unix_s(v: int) -> float:
+    """
+    Messages 'date' columns are Apple epoch (Jan 1, 2001), usually in nanoseconds.
+    Some macOS releases store in seconds; handle both heuristically.
+    """
+    if v is None:
+        return 0.0
+    # Apple epoch offset between 1970 and 2001:
+    APPLE_EPOCH_OFFSET = 978307200  # seconds
+    # Heuristic: if it's a huge number, it's ns; if smaller, seconds
+    if v > 10_000_000_000:  # definitely ns
+        return (v / 1_000_000_000.0) + APPLE_EPOCH_OFFSET
+    else:
+        # already seconds since 2001
+        return float(v) + APPLE_EPOCH_OFFSET
+
+def _unix_s_to_apple_epoch_ns(unix_s: float) -> int:
+    APPLE_EPOCH_OFFSET = 978307200
+    # Store as nanoseconds since 2001-01-01
+    return int((unix_s - APPLE_EPOCH_OFFSET) * 1_000_000_000)
+
+def _open_chatdb():
+    dbp = _chatdb_path()
+    conn = sqlite3.connect(str(dbp))
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def _lookup_latest_outbound_message(phone_e164: str, text: str, since_unix_s: float, within_seconds: float = 120.0):
+    """
+    Find the most recent outbound message to the given phone (matching last10) whose
+    text matches exactly (or fuzzy prefix) after since_unix_s. Returns a dict or None.
+    """
+    want10 = _last10_digits(phone_e164)
+
+    # Build a time window in Apple epoch units (nanoseconds)
+    apple_since_ns = _unix_s_to_apple_epoch_ns(since_unix_s - 5.0)  # 5s headroom
+    apple_until_ns = _unix_s_to_apple_epoch_ns(since_unix_s + within_seconds)
+
+    # We’ll try exact match first, then a fuzzy fallback on prefix if needed.
+    sql_base = """
+    SELECT
+        m.ROWID as message_rowid,
+        m.guid,
+        m.text,
+        m.date,
+        m.date_delivered,
+        m.is_from_me,
+        m.is_sent,
+        m.is_delivered,
+        m.error,
+        m.service,
+        h.id as handle_id_str
+    FROM message m
+    JOIN handle h ON m.handle_id = h.ROWID
+    WHERE m.is_from_me = 1
+      AND m.date BETWEEN ? AND ?
+      AND h.id IS NOT NULL
+    ORDER BY m.date DESC
+    LIMIT 50
+    """
+    try:
+        with _open_chatdb() as conn:
+            rows = conn.execute(sql_base, (apple_since_ns, apple_until_ns)).fetchall()
+    except Exception as e:
+        return {"status": "UNKNOWN", "reason": f"chat.db access error: {e}", "raw": None}
+
+    # Filter to matching handle (last10) and text match
+    def _row_status(row):
+        delivered = (row["is_delivered"] == 1) or (row["date_delivered"] and row["date_delivered"] > 0)
+        failed = (row["error"] or 0) > 0
+        svc = (row["service"] or "").upper()
+        return delivered, failed, svc
+
+    # Try exact text match first
+    for r in rows:
+        if _last10_digits(r["handle_id_str"]) == want10 and (r["text"] or "") == text:
+            delivered, failed, svc = _row_status(r)
+            if failed:
+                return {"status": "FAILED", "service": svc, "reason": "message.error > 0", "raw": dict(r)}
+            if delivered:
+                return {"status": "DELIVERED", "service": svc, "reason": "is_delivered/date_delivered", "raw": dict(r)}
+            return {"status": "SENT", "service": svc, "reason": "sent but not (delivered/failed) yet", "raw": dict(r)}
+
+    # Fallback: fuzzy prefix match (first 120 chars) to handle trimmed/templated changes
+    prefix = (text or "")[:120]
+    for r in rows:
+        if _last10_digits(r["handle_id_str"]) == want10 and (r["text"] or "").startswith(prefix):
+            delivered, failed, svc = _row_status(r)
+            if failed:
+                return {"status": "FAILED", "service": svc, "reason": "message.error > 0 (fuzzy match)", "raw": dict(r)}
+            if delivered:
+                return {"status": "DELIVERED", "service": svc, "reason": "is_delivered/date_delivered (fuzzy)", "raw": dict(r)}
+            return {"status": "SENT", "service": svc, "reason": "sent but not (delivered/failed) yet (fuzzy)", "raw": dict(r)}
+
+    return None  # not found in window
+
+def poll_message_delivery(phone: str, message: str, start_unix_s: float, max_wait_s: float = 60.0, interval_s: float = 2.0):
+    """
+    Poll chat.db for up to max_wait_s to resolve status. Returns a dict:
+    {status: DELIVERED|FAILED|SENT|UNKNOWN, service: 'IMESSAGE'|'SMS'|..., reason: str, likely_landline: bool}
+    """
+    deadline = time.time() + max_wait_s
+    last_seen = None
+    while time.time() < deadline:
+        res = _lookup_latest_outbound_message(phone, message, since_unix_s=start_unix_s, within_seconds=max_wait_s + 10)
+        if isinstance(res, dict):
+            last_seen = res
+            if res["status"] in ("DELIVERED", "FAILED"):
+                # early exit on decisive outcome
+                break
+        time.sleep(interval_s)
+
+    if not last_seen:
+        return {"status": "UNKNOWN", "service": None, "reason": "no matching row found", "likely_landline": False}
+
+    svc = last_seen.get("service") or ""
+    raw = last_seen.get("raw") or {}
+    likely_landline = (svc == "SMS" and last_seen["status"] == "FAILED")
+
+    return {
+        "status": last_seen["status"],
+        "service": svc,
+        "reason": last_seen.get("reason", ""),
+        "likely_landline": likely_landline,
+        "raw": raw,
+    }
+
 
 # ------------------------------
 # Templates (inline for a single-file app)
@@ -366,24 +517,31 @@ RESULTS_HTML_BODY = """
 <table class="min-w-full text-sm">
 <thead class="bg-white/5">
 <tr>
-<th class="p-3 text-left">Phone</th>
-<th class="p-3 text-left">Name</th>
-<th class="p-3 text-left">Status</th>
-<th class="p-3 text-left">Message</th>
-<th class="p-3 text-left">Error</th>
+  <th class="p-3 text-left">Phone</th>
+  <th class="p-3 text-left">Name</th>
+  <th class="p-3 text-left">OK?</th>
+  <th class="p-3 text-left">Status</th>
+  <th class="p-3 text-left">Channel</th>
+  <th class="p-3 text-left">Likely Landline</th>
+  <th class="p-3 text-left">Message</th>
+  <th class="p-3 text-left">Error</th>
 </tr>
 </thead>
 <tbody>
 {% for r in results %}
 <tr class="border-t border-white/10">
-<td class="p-3 align-top">{{ r.phone }}</td>
-<td class="p-3 align-top">{{ r.data.get('name','') }}</td>
-<td class="p-3 align-top">{% if r.ok %}<span class="text-emerald-300">OK</span>{% else %}<span class="text-rose-300">FAIL</span>{% endif %}</td>
-<td class="p-3 align-top whitespace-pre-wrap">{{ r.message }}</td>
-<td class="p-3 align-top text-rose-300">{{ r.error or '' }}</td>
+  <td class="p-3 align-top">{{ r.phone }}</td>
+  <td class="p-3 align-top">{{ r.data.get('name','') }}</td>
+  <td class="p-3 align-top">{% if r.ok %}<span class="text-emerald-300">YES</span>{% else %}<span class="text-rose-300">NO</span>{% endif %}</td>
+  <td class="p-3 align-top">{{ r.status or '' }}</td>
+  <td class="p-3 align-top">{{ r.service or '' }}</td>
+  <td class="p-3 align-top">{% if r.likely_landline %}✅{% else %}—{% endif %}</td>
+  <td class="p-3 align-top whitespace-pre-wrap">{{ r.message }}</td>
+  <td class="p-3 align-top text-rose-300">{{ r.error or '' }}</td>
 </tr>
 {% endfor %}
 </tbody>
+
 </table>
 </div>
 </div>
@@ -507,27 +665,87 @@ def preview():
         results = []
         sent_success = 0
         sent_failed = 0
+
         for row in chosen:
             phone = row["phone"]
             msg = row["preview"]
             data_for_row = row["data"]
             if row["error"] or not phone or not msg:
-                results.append({"ok": False, "phone": phone, "message": msg, "error": row["error"], "data": data_for_row})
+                results.append({
+                    "ok": False,
+                    "phone": phone,
+                    "message": msg,
+                    "error": row["error"],
+                    "data": data_for_row,
+                    "status": "SKIPPED",
+                    "service": None,
+                    "likely_landline": False,
+                })
                 sent_failed += 1
                 continue
+
             try:
+                send_start = None
                 if not dry_run:
-                    send_imessage(phone, msg)
+                    send_start = send_imessage(phone, msg)
+                else:
+                    send_start = time.time()
+
                 # throttle a bit to be polite / avoid rate limiting
                 time.sleep(random.uniform(delay_min, delay_max))
-                results.append({"ok": True, "phone": phone, "message": msg, "error": None, "data": data_for_row})
-                sent_success += 1
+
+                # Poll chat.db for delivery/failure (even in dry_run we skip real lookup)
+                if not dry_run:
+                    status_info = poll_message_delivery(phone, msg, start_unix_s=send_start, max_wait_s=60.0, interval_s=2.0)
+                else:
+                    status_info = {"status": "DRY_RUN", "service": None, "likely_landline": False, "reason": "no send"}
+
+                status = status_info.get("status")
+                service = status_info.get("service")
+                likely_landline = status_info.get("likely_landline", False)
+
+                ok = (status == "DELIVERED") or (status == "SENT")  # treat SENT (no failure yet) as tentatively OK
+
+                results.append({
+                    "ok": ok,
+                    "phone": phone,
+                    "message": msg,
+                    "error": None if ok else status_info.get("reason", "failed"),
+                    "data": data_for_row,
+                    "status": status,
+                    "service": service,
+                    "likely_landline": likely_landline,
+                })
+                if ok:
+                    sent_success += 1
+                else:
+                    sent_failed += 1
+
             except subprocess.CalledProcessError as e:
-                results.append({"ok": False, "phone": phone, "message": msg, "error": e.stderr.decode("utf-8", errors="ignore"), "data": data_for_row})
+                results.append({
+                    "ok": False,
+                    "phone": phone,
+                    "message": msg,
+                    "error": e.stderr.decode("utf-8", errors="ignore"),
+                    "data": data_for_row,
+                    "status": "FAILED",
+                    "service": None,
+                    "likely_landline": False,
+                })
                 sent_failed += 1
             except Exception as e:
-                results.append({"ok": False, "phone": phone, "message": msg, "error": str(e), "data": data_for_row})
+                results.append({
+                    "ok": False,
+                    "phone": phone,
+                    "message": msg,
+                    "error": str(e),
+                    "data": data_for_row,
+                    "status": "FAILED",
+                    "service": None,
+                    "likely_landline": False,
+                })
                 sent_failed += 1
+
 
         # write log
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -535,7 +753,11 @@ def preview():
         log_path = os.path.join(LOG_DIR, log_filename)
         with open(log_path, "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
-            w.writerow(["phone", "name", "business", "address", "ok", "error", "message"])
+            w.writerow([
+                "phone", "name", "business", "address",
+                "ok", "status", "service", "likely_landline",
+                "error", "message"
+            ])
             for r in results:
                 w.writerow([
                     r["phone"],
@@ -543,9 +765,13 @@ def preview():
                     r["data"].get("business", ""),
                     r["data"].get("address", ""),
                     "1" if r["ok"] else "0",
-                    (r["error"] or "").replace("\n", " "),
+                    r.get("status", ""),
+                    r.get("service", "") or "",
+                    "1" if r.get("likely_landline") else "0",
+                    (r.get("error") or "").replace("\n", " "),
                     r["message"],
                 ])
+
 
         body = render_template_string(
             RESULTS_HTML_BODY,
