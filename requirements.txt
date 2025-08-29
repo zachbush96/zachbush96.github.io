@@ -2,3 +2,7 @@ Flask
 requests
 stripe
 python-dotenv
+flask
+python-dotenv
+requests
+stripe
