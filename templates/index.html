@@ -149,39 +149,20 @@
       <button id="openBuyer_market" class="btn btn-cyan px-4 py-2">Get Alerts</button>
     </div>
     <div class="mt-6 grid md:grid-cols-3 gap-6">
-      <!-- Example cards -->
+      {% for lead in leads %}
       <article class="glass border border-white/10 rounded-2xl p-5">
         <div class="flex items-center justify-between text-sm">
-          <span class="badge">15236</span><span class="text-gray-300">Age: 35m</span>
+          <span class="badge">{{ lead['City/ZIP'] }}</span><span class="text-gray-300">Age: {{ lead['Lead Age'] }}</span>
         </div>
-        <h3 class="mt-2 font-semibold">Emergency limb on roof</h3>
-        <p class="text-sm text-gray-300 mt-1">Homeowner reports cracked limb over bedroom.</p>
+        <h3 class="mt-2 font-semibold">{{ lead['Description'] }}</h3>
         <div class="mt-3 flex items-center justify-between text-sm">
-          <span>Ask: <b>$65</b></span><span class="chip">Emergency</span>
+          <span>Ask: <b>${{ lead['Asking Price ($)'] }}</b></span><span class="chip">{{ lead['Category'] }}</span>
         </div>
+        <a href="{{ url_for('lead_detail', uuid=lead['uuid']) }}" class="btn btn-emerald w-full mt-4 py-2 text-center">Buy Now</a>
       </article>
-
-      <article class="glass border border-white/10 rounded-2xl p-5">
-        <div class="flex items-center justify-between text-sm">
-          <span class="badge">15108</span><span class="text-gray-300">Age: 2h</span>
-        </div>
-        <h3 class="mt-2 font-semibold">3 stumps, grind + haul</h3>
-        <p class="text-sm text-gray-300 mt-1">Front yard access, 20–24” diameter.</p>
-        <div class="mt-3 flex items-center justify-between text-sm">
-          <span>Ask: <b>$40</b></span><span class="chip">Stump</span>
-        </div>
-      </article>
-
-      <article class="glass border border-white/10 rounded-2xl p-5">
-        <div class="flex items-center justify-between text-sm">
-          <span class="badge">15210</span><span class="text-gray-300">Age: 5h</span>
-        </div>
-        <h3 class="mt-2 font-semibold">Trim 2 maples, powerline aware</h3>
-        <p class="text-sm text-gray-300 mt-1">Customer flexible on schedule.</p>
-        <div class="mt-3 flex items-center justify-between text-sm">
-          <span>Ask: <b>$30</b></span><span class="chip">Trimming</span>
-        </div>
-      </article>
+      {% else %}
+      <p class="text-gray-300">No leads available at this time.</p>
+      {% endfor %}
     </div>
   </section>
 

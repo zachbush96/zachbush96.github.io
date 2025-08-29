@@ -71,6 +71,28 @@ def fetch_all_leads():
     return [rec.get("fields", {}) for rec in records]
 
 
+def get_recent_leads(limit=3):
+    """Return up to ``limit`` unsold leads for homepage preview."""
+    fields_list = fetch_all_leads()
+    leads = []
+    for f in fields_list:
+        # skip leads that appear to be sold
+        if f.get('Status', '').lower() == 'sold':
+            continue
+        lead = {
+            'uuid': f.get('Lead ID', ''),
+            'Category': f.get('Category', ''),
+            'Lead Age': f.get('Lead Age', ''),
+            'City/ZIP': f.get('City/ZIP', ''),
+            'Description': f.get('Description', ''),
+            'Asking Price ($)': f.get('Asking Price ($)', ''),
+        }
+        leads.append(lead)
+        if len(leads) >= limit:
+            break
+    return leads
+
+
 def format_date_time(date_time_str):
     # Translate date time string to a more readable format
     # example : 2025-08-25T02:28:58.000Z to 08-25-2025 14:28:58
@@ -79,7 +101,8 @@ def format_date_time(date_time_str):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    recent_leads = get_recent_leads()
+    return render_template('index.html', leads=recent_leads)
 
 
 
