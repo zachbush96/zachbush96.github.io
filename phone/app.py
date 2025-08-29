@@ -354,6 +354,48 @@ def poll_message_delivery(phone: str, message: str, start_unix_s: float, max_wai
 
 
 # ------------------------------
+# Simple testing helper
+# ------------------------------
+
+def send_test_messages(test_numbers: Dict[str, str], message: str = "Test message") -> Dict[str, Dict[str, Any]]:
+    """Send `message` to each phone number and collect status information.
+
+    `test_numbers` should map a label (e.g. "imessage", "landline", "android")
+    to a phone number in E.164 or local format. Returns a dictionary mapping the
+    label to the delivery status information returned by `poll_message_delivery`.
+    """
+    results: Dict[str, Dict[str, Any]] = {}
+    for label, phone in test_numbers.items():
+        if not phone:
+            results[label] = {
+                "status": "MISSING",
+                "service": None,
+                "likely_landline": False,
+                "reason": "no number provided",
+            }
+            continue
+        try:
+            send_start = send_imessage(phone, message)
+            status_info = poll_message_delivery(phone, message, start_unix_s=send_start)
+        except subprocess.CalledProcessError as e:
+            status_info = {
+                "status": "ERROR",
+                "service": None,
+                "likely_landline": False,
+                "reason": e.stderr.decode("utf-8", errors="ignore"),
+            }
+        except Exception as e:
+            status_info = {
+                "status": "ERROR",
+                "service": None,
+                "likely_landline": False,
+                "reason": str(e),
+            }
+        results[label] = status_info
+    return results
+
+
+# ------------------------------
 # Templates (inline for a single-file app)
 # ------------------------------
 
@@ -866,4 +908,15 @@ def api_send():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    if os.environ.get("RUN_TEXT_TESTS"):
+        test_numbers = {
+            "imessage": os.environ.get("TEST_NUMBER_IMESSAGE"),
+            "landline": os.environ.get("TEST_NUMBER_LANDLINE"),
+            "android": os.environ.get("TEST_NUMBER_ANDROID"),
+        }
+        message = os.environ.get("TEST_MESSAGE", "Automated status test")
+        results = send_test_messages(test_numbers, message)
+        for label, info in results.items():
+            print(f"{label}: {info}")
+    else:
+        app.run(host="127.0.0.1", port=5000, debug=True)
