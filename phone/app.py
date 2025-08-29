@@ -6,6 +6,7 @@ import os
 import re
 import time
 import random
+import hashlib
 import secrets
 import subprocess
 from datetime import datetime
@@ -401,8 +402,12 @@ INDEX_HTML_BODY = """
 <input class="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 cursor-pointer" type="file" name="csv_file" accept=".csv" required>
 <p class="text-sm text-slate-400 mt-2">Headers like <code>phone</code>, <code>name</code>, <code>business</code>, <code>address</code> are recognized automatically.</p>
 <div class="mt-6">
-<label class="block text-sm font-medium mb-2" for="template">2) Message Template</label>
-<textarea id="template" name="template" rows="6" class="w-full rounded-xl bg-black/30 border border-white/10 p-3" required>{{ default_template }}</textarea>
+<label class="block text-sm font-medium mb-2" for="template_a">2) Message Template A</label>
+<textarea id="template_a" name="template_a" rows="6" class="w-full rounded-xl bg-black/30 border border-white/10 p-3" required>{{ default_template_a }}</textarea>
+</div>
+<div class="mt-6">
+<label class="block text-sm font-medium mb-2" for="template_b">3) Message Template B</label>
+<textarea id="template_b" name="template_b" rows="6" class="w-full rounded-xl bg-black/30 border border-white/10 p-3" required>{{ default_template_b }}</textarea>
 <p class="text-xs text-slate-400 mt-2">Use Jinja placeholders, e.g. <code>{{ "{{name}}" }}</code>, <code>{{ "{{business}}" }}</code>, <code>{{ "{{address}}" }}</code></p>
 </div>
 <div class="mt-6 flex items-center gap-3">
@@ -414,21 +419,29 @@ INDEX_HTML_BODY = """
 <div class="bg-white/5 border border-white/10 rounded-2xl p-6">
 <h2 class="text-xl font-semibold mb-2">Preview Example</h2>
 <p class="text-sm text-slate-400 mb-3">(Live sample with dummy data)</p>
-<div class="rounded-xl bg-black/40 border border-white/10 p-4" id="livePreview"></div>
+<p class="text-xs text-slate-400 mb-1">Variant A</p>
+<div class="rounded-xl bg-black/40 border border-white/10 p-4 mb-4" id="livePreviewA"></div>
+<p class="text-xs text-slate-400 mb-1">Variant B</p>
+<div class="rounded-xl bg-black/40 border border-white/10 p-4" id="livePreviewB"></div>
 </div>
 </div>
 <script>
 const sample = {name: "Alex", business: "Rivera Tree Co.", address: "123 Walnut St, Pittsburgh"};
-const textarea = document.getElementById('template');
-const preview = document.getElementById('livePreview');
+const textareaA = document.getElementById('template_a');
+const textareaB = document.getElementById('template_b');
+const previewA = document.getElementById('livePreviewA');
+const previewB = document.getElementById('livePreviewB');
 function render() {
-let t = textarea.value;
-// naive preview: just replace common handles for the demo box
-preview.textContent = t.replaceAll("{{name}}", sample.name)
-.replaceAll("{{business}}", sample.business)
-.replaceAll("{{address}}", sample.address);
+  function repl(t) {
+    return t.replaceAll("{{name}}", sample.name)
+            .replaceAll("{{business}}", sample.business)
+            .replaceAll("{{address}}", sample.address);
+  }
+  previewA.textContent = repl(textareaA.value);
+  previewB.textContent = repl(textareaB.value);
 }
-textarea.addEventListener('input', render);
+textareaA.addEventListener('input', render);
+textareaB.addEventListener('input', render);
 render();
 </script>
 """
@@ -438,9 +451,11 @@ PREVIEW_HTML_BODY = """
 <input type="hidden" name="action" id="actionField" value="refresh">
 <div class="grid md:grid-cols-3 gap-6">
 <div class="md:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-6">
-<h2 class="text-xl font-semibold mb-4">Template & Live Preview</h2>
-<label class="block text-sm font-medium mb-2" for="template">Message Template</label>
-<textarea id="template" name="template" rows="6" class="w-full rounded-xl bg-black/30 border border-white/10 p-3" required>{{ template }}</textarea>
+<h2 class="text-xl font-semibold mb-4">Templates & Live Preview</h2>
+<label class="block text-sm font-medium mb-2" for="template_a">Message Template A</label>
+<textarea id="template_a" name="template_a" rows="6" class="w-full rounded-xl bg-black/30 border border-white/10 p-3" required>{{ template_a }}</textarea>
+<label class="block text-sm font-medium mb-2 mt-4" for="template_b">Message Template B</label>
+<textarea id="template_b" name="template_b" rows="6" class="w-full rounded-xl bg-black/30 border border-white/10 p-3" required>{{ template_b }}</textarea>
 <p class="text-xs text-slate-400 mt-2">Use placeholders like <code>{{ "{{name}}" }}</code>, <code>{{ "{{business}}" }}</code>, <code>{{ "{{address}}" }}</code>. Unknown placeholders will show an error per row.</p>
 <div class="mt-4 flex items-center gap-3">
 <button class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 font-semibold" onclick="document.getElementById('actionField').value='refresh'">Refresh Preview</button>
@@ -474,6 +489,7 @@ PREVIEW_HTML_BODY = """
 <th class="p-3 text-left">Name</th>
 <th class="p-3 text-left">Business</th>
 <th class="p-3 text-left">Address</th>
+<th class="p-3 text-left">Variant</th>
 <th class="p-3 text-left">Preview</th>
 </tr>
 </thead>
@@ -485,6 +501,7 @@ PREVIEW_HTML_BODY = """
 <td class="p-3 align-top text-slate-200">{{ row.data.get('name','') }}</td>
 <td class="p-3 align-top text-slate-200">{{ row.data.get('business','') }}</td>
 <td class="p-3 align-top text-slate-200">{{ row.data.get('address','') }}</td>
+<td class="p-3 align-top text-slate-200">{{ row.variant }}</td>
 <td class="p-3 align-top">
 {% if row.error %}
 <div class="text-rose-300">⚠️ {{ row.error }}</div>
@@ -518,6 +535,7 @@ RESULTS_HTML_BODY = """
 <thead class="bg-white/5">
 <tr>
   <th class="p-3 text-left">Phone</th>
+  <th class="p-3 text-left">Variant</th>
   <th class="p-3 text-left">Name</th>
   <th class="p-3 text-left">OK?</th>
   <th class="p-3 text-left">Status</th>
@@ -525,12 +543,13 @@ RESULTS_HTML_BODY = """
   <th class="p-3 text-left">Likely Landline</th>
   <th class="p-3 text-left">Message</th>
   <th class="p-3 text-left">Error</th>
-</tr>
+ </tr>
 </thead>
 <tbody>
 {% for r in results %}
 <tr class="border-t border-white/10">
   <td class="p-3 align-top">{{ r.phone }}</td>
+  <td class="p-3 align-top">{{ r.variant }}</td>
   <td class="p-3 align-top">{{ r.data.get('name','') }}</td>
   <td class="p-3 align-top">{% if r.ok %}<span class="text-emerald-300">YES</span>{% else %}<span class="text-rose-300">NO</span>{% endif %}</td>
   <td class="p-3 align-top">{{ r.status or '' }}</td>
@@ -554,9 +573,13 @@ RESULTS_HTML_BODY = """
 def index():
     body = render_template_string(
         INDEX_HTML_BODY,
-        default_template=(
+        default_template_a=(
             "Hey {{name}}, I see {{business or 'your business'}} at {{address}}. "
             "Just wondering how business is going?"
+        ),
+        default_template_b=(
+            "Hi {{name}}, do you need more jobs around {{address}}? "
+            "We can send qualified tree leads."
         ),
     )
     return render_template_string(BASE_HTML, body=body)
@@ -564,9 +587,10 @@ def index():
 @app.post("/upload")
 def upload():
     file = request.files.get("csv_file")
-    template = request.form.get("template", "").strip()
-    if not file or not template:
-        flash("CSV and template are required.")
+    template_a = request.form.get("template_a", "").strip()
+    template_b = request.form.get("template_b", "").strip()
+    if not file or not template_a or not template_b:
+        flash("CSV and both templates are required.")
         return redirect(url_for("index"))
 
     content = file.read().decode("utf-8", errors="replace")
@@ -600,7 +624,8 @@ def upload():
     session["data_id"] = data_id
     DATA_STORE[data_id] = {
         "rows": rows,
-        "template": template,
+        "template_a": template_a,
+        "template_b": template_b,
     }
     return redirect(url_for("preview"))
 
@@ -612,9 +637,13 @@ def preview():
         flash("No CSV loaded yet.")
         return redirect(url_for("index"))
 
-    template = (request.form.get("template") or data.get("template") or "").strip()
+    template_a = (request.form.get("template_a") or data.get("template_a") or "").strip()
+    template_b = (request.form.get("template_b") or data.get("template_b") or "").strip()
     action = request.form.get("action") or "refresh"
     rows_raw: List[Dict[str, Any]] = data.get("rows", [])
+    data["template_a"] = template_a
+    data["template_b"] = template_b
+    DATA_STORE[data_id] = data
 
     # Build previews with error capture
     preview_rows = []
@@ -628,16 +657,20 @@ def preview():
                 "data": r,
                 "phone": phone,
                 "preview": "",
+                "variant": "A",
                 "error": "Missing phone",
             })
             err_count += 1
             continue
+        variant = "A" if int(hashlib.md5(phone.encode()).hexdigest(), 16) % 2 == 0 else "B"
+        tmpl = template_a if variant == "A" else template_b
         try:
-            msg = jinja_render(template, context)
+            msg = jinja_render(tmpl, context)
             preview_rows.append({
                 "data": r,
                 "phone": phone,
                 "preview": msg,
+                "variant": variant,
                 "error": None,
             })
             ok_count += 1
@@ -646,6 +679,7 @@ def preview():
                 "data": r,
                 "phone": phone,
                 "preview": "",
+                "variant": variant,
                 "error": f"Template error: {e}",
             })
             err_count += 1
@@ -669,11 +703,13 @@ def preview():
         for row in chosen:
             phone = row["phone"]
             msg = row["preview"]
+            variant = row.get("variant", "A")
             data_for_row = row["data"]
             if row["error"] or not phone or not msg:
                 results.append({
                     "ok": False,
                     "phone": phone,
+                    "variant": variant,
                     "message": msg,
                     "error": row["error"],
                     "data": data_for_row,
@@ -709,6 +745,7 @@ def preview():
                 results.append({
                     "ok": ok,
                     "phone": phone,
+                    "variant": variant,
                     "message": msg,
                     "error": None if ok else status_info.get("reason", "failed"),
                     "data": data_for_row,
@@ -725,6 +762,7 @@ def preview():
                 results.append({
                     "ok": False,
                     "phone": phone,
+                    "variant": variant,
                     "message": msg,
                     "error": e.stderr.decode("utf-8", errors="ignore"),
                     "data": data_for_row,
@@ -737,6 +775,7 @@ def preview():
                 results.append({
                     "ok": False,
                     "phone": phone,
+                    "variant": variant,
                     "message": msg,
                     "error": str(e),
                     "data": data_for_row,
@@ -754,13 +793,14 @@ def preview():
         with open(log_path, "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
             w.writerow([
-                "phone", "name", "business", "address",
+                "phone", "variant", "name", "business", "address",
                 "ok", "status", "service", "likely_landline",
                 "error", "message"
             ])
             for r in results:
                 w.writerow([
                     r["phone"],
+                    r.get("variant", ""),
                     r["data"].get("name", ""),
                     r["data"].get("business", ""),
                     r["data"].get("address", ""),
@@ -784,12 +824,11 @@ def preview():
         return render_template_string(BASE_HTML, body=body)
 
     # Otherwise show preview table
-    data["template"] = template
-    DATA_STORE[data_id] = data
     body = render_template_string(
         PREVIEW_HTML_BODY,
         rows=preview_rows,
-        template=template,
+        template_a=template_a,
+        template_b=template_b,
         total=total,
         ok_count=ok_count,
         err_count=err_count,
