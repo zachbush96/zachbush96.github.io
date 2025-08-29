@@ -801,5 +801,30 @@ def preview():
 def download_log(filename: str):
     return send_from_directory(LOG_DIR, filename, as_attachment=True)
 
+@app.post("/api/send")
+def api_send():
+    data = request.get_json(force=True)
+    phone = normalize_phone(data.get("phone"))
+    template = data.get("template", "")
+    context = data.get("context", {})
+
+    if not phone or not template:
+        return {"ok": False, "error": "phone and template required"}, 400
+
+    try:
+        msg = jinja_render(template, context)
+        send_start = send_imessage(phone, msg)
+        status_info = poll_message_delivery(phone, msg, start_unix_s=send_start)
+
+        return {
+            "ok": status_info["status"] in ("DELIVERED", "SENT"),
+            "phone": phone,
+            "message": msg,
+            **status_info
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}, 500
+
+
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)
