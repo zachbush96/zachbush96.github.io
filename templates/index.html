@@ -81,6 +81,7 @@
         <div class="mt-6 flex flex-wrap gap-3">
           <button id="openSeller_h" class="btn btn-emerald px-5 py-3">Post an Overflow Lead</button>
           <button id="openBuyer_h" class="btn btn-cyan px-5 py-3">Get Lead Alerts</button>
+          <button id="openLeads" class="btn px-5 py-3 w-full bg-white/10 border border-white/10">View Current Leads</button>
         </div>
         <ul class="mt-5 text-sm text-gray-300 space-y-2">
           <li class="flex items-start gap-2"><span class="text-emerald-400">✓</span> No subscriptions—pay only on successful sale (1%).</li>
@@ -93,6 +94,7 @@
           <span class="chip">Stump</span>
           <span class="chip">Crane</span>
           <span class="chip">Emergency</span>
+          <span class="chip">Other</span>
         </div>
       </div>
 
@@ -476,6 +478,11 @@
         closeModal(sellerModal);
       }
     });
+
+    // ----- Open leads page (/leads)-----
+    document.getElementById('openLeads').addEventListener('click', ()=>{
+      window.location.href = '/leads';
+    })
   </script>
 
   

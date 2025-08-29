@@ -48,24 +48,26 @@
     <table id="leadsTable" class="display stripe w-full text-sm">
       <thead>
         <tr>
+          <th>Created</th>
           <th>Category</th>
           <th>Lead Age</th>
           <th>City/ZIP</th>
           <th>Description</th>
           <th>Asking Price ($)</th>
-          <th>Created</th>
+          
           <th></th>
         </tr>
       </thead>
       <tbody>
         {% for lead in leads %}
         <tr>
+          <td>{{ lead['Created 2'] }}</td>
           <td>{{ lead['Category'] }}</td>
           <td>{{ lead['Lead Age'] }}</td>
           <td>{{ lead['City/ZIP'] }}</td>
           <td>{{ lead['Description'] }}</td>
-          <td>{{ lead['Asking Price ($)'] }}</td>
-          <td>{{ lead['Created 2'] }}</td>
+          <td>${{ lead['Asking Price ($)'] }}</td>
+          
           <td><button data-uuid="{{ lead['uuid'] }}" class="purchase btn btn-cyan px-3 py-1">Purchase Lead</button></td>
         </tr>
         {% endfor %}

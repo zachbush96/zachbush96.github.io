@@ -5,6 +5,7 @@ import stripe
 import smtplib
 from email.message import EmailMessage
 from dotenv import load_dotenv
+from datetime import datetime
 
 
 app = Flask(__name__)
@@ -70,9 +71,16 @@ def fetch_all_leads():
     return [rec.get("fields", {}) for rec in records]
 
 
+def format_date_time(date_time_str):
+    # Translate date time string to a more readable format
+    # example : 2025-08-25T02:28:58.000Z to 08-25-2025 14:28:58
+    date_time_obj = datetime.strptime(date_time_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+    return date_time_obj.strftime("%m-%d-%Y %H:%M:%S")
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 
 @app.route('/leads')
@@ -87,7 +95,7 @@ def public_leads():
             'City/ZIP': f.get('City/ZIP', ''),
             'Description': f.get('Description', ''),
             'Asking Price ($)': f.get('Asking Price ($)', ''),
-            'Created 2': f.get('Created 2', '')
+            'Created 2': format_date_time(f.get('Created 2', ''))
         }
         leads.append(lead)
     categories = sorted({l['Category'] for l in leads if l['Category']})
