@@ -61,9 +61,37 @@ def send_lead_email(to_email, lead_fields):
         server.send_message(msg)
 
 
+def fetch_all_leads():
+    """Fetch all leads from Airtable."""
+    url = f"https://api.airtable.com/v0/{airtable_base_id}/Leads"
+    headers = {"Authorization": f"Bearer {airtable_api_key}"}
+    resp = requests.get(url, headers=headers)
+    records = resp.json().get("records", [])
+    return [rec.get("fields", {}) for rec in records]
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
+
+@app.route('/leads')
+def public_leads():
+    fields = fetch_all_leads()
+    leads = []
+    for f in fields:
+        lead = {
+            'uuid': f.get('Lead ID', ''),
+            'Category': f.get('Category', ''),
+            'Lead Age': f.get('Lead Age', ''),
+            'City/ZIP': f.get('City/ZIP', ''),
+            'Description': f.get('Description', ''),
+            'Asking Price ($)': f.get('Asking Price ($)', ''),
+            'Created 2': f.get('Created 2', '')
+        }
+        leads.append(lead)
+    categories = sorted({l['Category'] for l in leads if l['Category']})
+    return render_template('leads.html', leads=leads, categories=categories, publishable_key=stripe_public_key)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -137,7 +165,8 @@ def create_checkout_session(uuid):
     fields = fetch_lead(uuid)
     if not fields:
         return {"error": "Lead not found"}, 404
-    price = int(float(fields.get('Price', 0)) * 100)
+    amount = fields.get('Price') or fields.get('Asking Price ($)', 0)
+    price = int(float(amount) * 100)
     session = stripe.checkout.Session.create(
         mode='payment',
         line_items=[{
